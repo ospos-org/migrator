@@ -1,4 +1,4 @@
-### `open-retail migrator`
+### `migrator`
 
 The open source data format migrator utility for OpenRetail.
 
@@ -17,8 +17,8 @@ To convert toward the open-retail standard, run the following command.
 
 ```
 odm parse --format <FORMAT> --type <TYPE> --input <FILE>
-
 ```
+
 Where:
 -  `<FILE>` represents the path to your product `.csv` export from your existing solution.
 - `<FORMAT>` represents the name of the existing solution. For supported standards, see [here]
