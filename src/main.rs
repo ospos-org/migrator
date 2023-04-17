@@ -27,6 +27,12 @@ fn main() {
                         .required(true)
                         .value_parser(clap::value_parser!(String))
                 )
+                .arg(
+                    clap::arg!(-t --type <TYPE> "Sets input file type")
+                        .id("type")
+                        .required(true)
+                        .value_parser(clap::value_parser!(String))
+                )
         )
         .get_matches();
 
@@ -34,9 +40,10 @@ fn main() {
         Some("parse") => {
             let file: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("input").expect("Expected value 'input'. ").to_string();
             let format: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("format").expect("Expected value 'format'. ").to_string();
+            let file_type: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("type").expect("Expected value 'type'. ").to_string();
 
             let rdr = csv::Reader::from_path(file).unwrap();
-            let products = read_file(rdr, format);
+            let products = read_file(rdr, format, file_type);
 
             println!("{}", products);
         },

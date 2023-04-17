@@ -10,7 +10,7 @@ pub enum ParseFailure {
     FormatFailure(String)
 }
 
-type ProductParser = fn(Reader<File>) -> Result<Vec<Product>, ParseFailure>;
+type ProductParser = fn(Reader<File>, String) -> Result<Vec<Product>, ParseFailure>;
 
 pub static PRODUCT_FORMATS: Map<&'static str, ProductParser> = phf_map! {
     "shopify" => format::shopify::parse_product,

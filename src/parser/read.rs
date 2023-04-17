@@ -16,12 +16,12 @@ impl fmt::Display for Products {
 
 use super::PRODUCT_FORMATS;
 
-pub fn read_file(reader: Reader<File>, format: String) -> Products {
+pub fn read_file(reader: Reader<File>, format: String, file_type: String) -> Products {
     let mut products: Products = Products(vec![]);
 
     match PRODUCT_FORMATS.get(&format) {
         Some(executor) => {
-            let result = executor(reader);
+            let result = executor(reader, file_type);
 
             match result {
                 Ok(pdt) => products = Products(pdt),

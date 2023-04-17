@@ -130,7 +130,7 @@ struct Record {
     google_custom_product: String,
 }
 
-pub fn parse_product(mut reader: Reader<File>) -> Result<Vec<Product>, ParseFailure> {
+pub fn parse_product(mut reader: Reader<File>, file_type: String) -> Result<Vec<Product>, ParseFailure> {
     let collected: Vec<Result<Record, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
     let mut products: Vec<Product> = vec![];
