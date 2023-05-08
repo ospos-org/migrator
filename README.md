@@ -23,7 +23,7 @@ or
 
 ```
 odm parse --solution <SOLUTION> --input <DIRECTORY>
-``
+```
 
 Where:
 -  `<FILE>` represents the file path (or directory) to your `.csv` export(s) from your existing solution, this is often broken into multiple files, the one you wish to migrate can be specified by `--type`.
