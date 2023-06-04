@@ -34,7 +34,7 @@ impl fmt::Display for Transactions {
     }
 }
 
-use super::{CUSTOMER_FORMATS, TRANSACTION_FORMATS, PRODUCT_FORMATS};
+use super::{PRODUCT_FORMATS, CUSTOMER_FORMATS, TRANSACTION_FORMATS};
 
 pub fn read_file(reader: Reader<File>, format: String, file_type: String) -> (Products, Customers, Transactions) {
     let mut products: Products = Products(vec![]);

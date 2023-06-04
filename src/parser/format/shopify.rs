@@ -11,8 +11,12 @@ struct Options {
     option_3_name: String
 }
 
+pub trait Parsable<R> {
+    fn parse_individual(reader: &Vec<Result<R, csv::Error>>, line: &mut usize) -> Result<Self, ParseFailure> where Self: Sized;
+}
+
 #[derive(Serialize, Deserialize, Debug)]
-struct Record {
+pub struct ProductRecord {
     #[serde(rename = "Handle")]
     handle: String,
 
@@ -137,23 +141,302 @@ struct Record {
     google_custom_product: String,
 }
 
-pub fn parse_customers(mut reader: Reader<File>) -> Result<Vec<Customer>, ParseFailure> {
-    Err(ParseFailure::EOFException)
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CustomerRecord {
+    #[serde(rename = "First Name")]
+    first_name: String,
+
+    #[serde(rename = "Last Name")]
+    last_name: String,
+
+    #[serde(rename = "Email")]
+    email: String,
+
+    #[serde(rename = "Accepts Email Marketing Name")]
+    accepts_marketing: String,
+
+    #[serde(rename = "Company")]
+    company: String,
+
+    #[serde(rename = "Address1")]
+    address_street: String,
+
+    #[serde(rename = "Address2")]
+    address_suburb: String,
+
+    #[serde(rename = "City")]
+    address_city: String,
+
+    #[serde(rename = "Province")]
+    address_province: String,
+
+    #[serde(rename = "Province Code")]
+    address_province_code: String,
+
+    #[serde(rename = "Country")]
+    address_country: String,
+
+    #[serde(rename = "Country Code")]
+    address_country_code: String,
+
+    #[serde(rename = "Zip")]
+    address_zip: String,
+
+    #[serde(rename = "Phone")]
+    phone_number: String,
+
+    #[serde(rename = "Accepts SMS")]
+    accepts_sms: String,
+
+    #[serde(rename = "Total Spent")]
+    accrued_billing: String,
+
+    #[serde(rename = "Total Orders")]
+    order_total: String,
+
+    #[serde(rename = "Tags")]
+    tags: String,
+
+    #[serde(rename = "Note")]
+    note: String,
+
+    #[serde(rename = "Tax Exempt")]
+    tax_exempt: String,
 }
 
-pub fn parse_transactions(mut reader: Reader<File>) -> Result<Vec<Transaction>, ParseFailure> {
-    Err(ParseFailure::EOFException)
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TransactionRecord {
+    #[serde(rename = "Name")]
+    order_name: String,
+
+    #[serde(rename = "Email")]
+    email: String,
+
+    #[serde(rename = "Financial Status")]
+    financial_status: String,
+
+    #[serde(rename = "Paid at")]
+    paid_at: String,
+
+    #[serde(rename = "Fulfillment Status")]
+    fulfillment_status: String,
+
+    #[serde(rename = "Fulfilled at")]
+    fulfilled_at: String,
+
+    #[serde(rename = "Accepts Marketing")]
+    accepts_marketing: String,
+
+    #[serde(rename = "Currency")]
+    currency: String,
+
+    #[serde(rename = "Subtotal")]
+    subtotal: String,
+
+    #[serde(rename = "Shipping")]
+    shipping_cost: String,
+
+    #[serde(rename = "Taxes")]
+    taxes: String,
+
+    #[serde(rename = "Total")]
+    total: String,
+
+    #[serde(rename = "Discount Code")]
+    discount_code: String,
+
+    #[serde(rename = "Discount Amount")]
+    discount_amount: String,
+
+    #[serde(rename = "Shipping Method")]
+    shipping_method: String,
+
+    #[serde(rename = "Created at")]
+    created_at: String,
+
+    #[serde(rename = "Lineitem quantity")]
+    lineitem_quantity: String,
+
+    #[serde(rename = "Lineitem name")]
+    lineitem_name: String,
+
+    #[serde(rename = "Lineitem price")]
+    lineitem_price: String,
+
+    #[serde(rename = "Lineitem compare at price")]
+    lineitem_cap: String,
+
+    #[serde(rename = "Lineitem sku")]
+    lineitem_sku: String,
+
+    #[serde(rename = "Lineitem requires shipping")]
+    lineitem_requires_shipping: String,
+
+    #[serde(rename = "Lineitem taxable")]
+    lineitem_taxable: String,
+
+    #[serde(rename = "Lineitem filfillment status")]
+    lineitem_fulfillment: String,
+
+    #[serde(rename = "Billing Name")]
+    billing_name: String,
+
+    #[serde(rename = "Billing Street")]
+    billing_street: String,
+
+    #[serde(rename = "Billing Address1")]
+    billing_address: String,
+
+    #[serde(rename = "Billing Address2")]
+    billing_address_2: String,
+
+    #[serde(rename = "Billing Company")]
+    billing_company: String,
+
+    #[serde(rename = "Billing City")]
+    billing_city: String,
+
+    #[serde(rename = "Billing Zip")]
+    billing_zip: String,
+
+    #[serde(rename = "Billing Province")]
+    billing_province: String,
+
+    #[serde(rename = "Billing Country")]
+    billing_country: String,
+
+    #[serde(rename = "Billing Phone")]
+    billing_phone: String,
+
+    #[serde(rename = "Shipping Name")]
+    shipping_name: String,
+
+    #[serde(rename = "Shipping Street")]
+    shipping_street: String,
+
+    #[serde(rename = "Shipping Address1")]
+    shipping_address: String,
+
+    #[serde(rename = "Shipping Address2")]
+    shipping_address2: String,
+
+    #[serde(rename = "Shipping Company")]
+    shipping_company: String,
+
+    #[serde(rename = "Shipping Zip")]
+    shipping_zip: String,
+
+    #[serde(rename = "Shipping Province")]
+    shipping_province: String,
+
+    #[serde(rename = "Shipping Country")]
+    shipping_country: String,
+
+    #[serde(rename = "Shipping Phone")]
+    shipping_phone: String,
+
+    #[serde(rename = "Notes")]
+    notes: String,
+
+    #[serde(rename = "Note Attributes")]
+    note_attributes: String,
+
+    #[serde(rename = "Cancelled at")]
+    cancelled_at: String,
+
+    #[serde(rename = "Payment Method")]
+    payment_method: String,
+
+    #[serde(rename = "Payment Reference")]
+    payment_reference: String,
+
+    #[serde(rename = "Refunded Amount")]
+    refunded_amount: String,
+
+    #[serde(rename = "Vendor")]
+    vendor: String,
+
+    #[serde(rename = "Outstanding Balance")]
+    outstanding: String,
+
+    #[serde(rename = "Employee")]
+    employee: String,
+
+    #[serde(rename = "Location")]
+    location: String,
+
+    #[serde(rename = "Device ID")]
+    device_id: String,
+
+    #[serde(rename = "Id")]
+    id: String,
+
+    #[serde(rename = "Tags")]
+    tags: String,
+
+    #[serde(rename = "Risk Level")]
+    risk_level: String,
+
+    #[serde(rename = "Source")]
+    source: String,
+
+    #[serde(rename = "Lineitem discount")]
+    lineitem_discount: String,
+
+    #[serde(rename = "Tax 1 Name")]
+    tax_1_name: String,
+
+    #[serde(rename = "Tax 1 Value")]
+    tax_1_value: String,
+
+    #[serde(rename = "Tax 2 Name")]
+    tax_2_name: String,
+
+    #[serde(rename = "Tax 2 Value")]
+    tax_2_value: String,
+    
+    #[serde(rename = "Tax 3 Name")]
+    tax_3_name: String,
+
+    #[serde(rename = "Tax 3 Value")]
+    tax_3_value: String,
+    
+    #[serde(rename = "Tax 4 Name")]
+    tax_4_name: String,
+
+    #[serde(rename = "Tax 4 Value")]
+    tax_4_value: String,
+
+    #[serde(rename = "Tax 5 Name")]
+    tax_5_name: String,
+
+    #[serde(rename = "Tax 5 Value")]
+    tax_5_value: String,
+    
+    #[serde(rename = "Phone")]
+    phone: String,
+
+    #[serde(rename = "Receipt Number")]
+    receipt_number: String,
+
+    #[serde(rename = "Duties")]
+    duties: String,
+
+    #[serde(rename = "Payment Terms Name")]
+    payment_terms_name: String,
+
+    #[serde(rename = "Next Payment Due At")]
+    next_payment_due_at: String,
 }
 
-pub fn parse_products(mut reader: Reader<File>) -> Result<Vec<Product>, ParseFailure> {
-    let collected: Vec<Result<Record, csv::Error>> = reader.deserialize().collect();
+pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(mut reader: Reader<File>) -> Result<Vec<T>, ParseFailure> {
+    let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
-    let mut products: Vec<Product> = vec![];
+    let mut items: Vec<T> = vec![];
 
     loop {
-        // Run following till EOF
-        match parse_individual_product(&collected, &mut iterator) {
-            Ok(pdt) => products.push(pdt),
+        match T::parse_individual(&collected, &mut iterator) {
+            Ok(i) => items.push(i),
             Err(err) => {
                 match err {
                     ParseFailure::EOFException => break,
@@ -161,250 +444,271 @@ pub fn parse_products(mut reader: Reader<File>) -> Result<Vec<Product>, ParseFai
                         println!("[warn]: Parser Warning: {:?}", error);
                     }
                 }
-            },
+            }
         }
-    }
+    } 
 
-    Ok(products)
+    Ok(items)
 }
 
-fn parse_individual_product(reader: &Vec<Result<Record, csv::Error>>, line: &mut usize) -> Result<Product, ParseFailure> {
-    let init_line = line.clone();
-    let mut options: Option<Options> = None;
-    
-    let mut product: Product = {
-        // Generate Variant Groups
-        let mut vcs = vec![];
-
-        let val = match reader.get(*line) {
-            Some(v) => v,
-            None => return Err(ParseFailure::EOFException)
-        };
-
-        let cloned = (*val.clone()).as_ref().unwrap();
-
-        if cloned.title == "" {
-            *line += 1;
-            return Err(ParseFailure::ReadFailure("Empty Field".to_owned()))
-        }
-
-        if cloned.option_1_name != "" { 
-            let vc: VariantCategory = VariantCategory {
-                category: (*cloned.option_1_name.clone()).to_string(),
-                variants: vec![]
-            };
-
-            vcs.push(vc);
-        }
-
-        if cloned.option_2_name != "" { 
-            let vc: VariantCategory = VariantCategory {
-                category: (*cloned.option_2_name.clone()).to_string(),
-                variants: vec![]
-            };
-
-            vcs.push(vc);
-        }
-
-        if cloned.option_3_name != "" { 
-            let vc: VariantCategory = VariantCategory {
-                category: (*cloned.option_3_name.clone()).to_string(),
-                variants: vec![]
-            };
-
-            vcs.push(vc); 
-        }
-
-        options = Some(Options {
-            option_1_name: (*cloned.option_1_name.clone()).to_string(),
-            option_2_name: (*cloned.option_2_name.clone()).to_string(),
-            option_3_name: (*cloned.option_3_name.clone()).to_string()
-        });
-
-        Product {
-            name: (*cloned.title.clone()).to_string(),
-            company: (*cloned.vendor.clone()).to_string(),
-            variant_groups: vcs,
-            variants: vec![],
-            sku: uuid::Uuid::new_v4().to_string(),
-            images: vec![(*cloned.image_url.clone()).to_string()],
-            tags: vec![(*cloned.tags.clone()).to_string()],
-            description: (*cloned.body.clone()).to_string(),
-            specifications: vec![],
-        }
-    };
-
-    // Keep parsing till reached.
-    loop {
-        let val = match reader.get(*line) {
-            Some(v) => v,
-            None => {
-                break
-            }
-        };
-
-        let cloned = (*val.clone()).as_ref().unwrap();
-
-        if (*cloned.title.clone()).to_string() != "" && *line.deref() != init_line {
-            // Should skip line, is a new product
-            break;
-        }else if (*cloned.title.clone()).to_string() == "" && cloned.price == "" {
-            // End of valid product range
-            break;
-        }
-
-        let mut actual_title = format!("{} {} {}", (*cloned.option_1_value.clone()).to_string(), (*cloned.option_2_value.clone()).to_string(), (*cloned.option_3_value.clone()).to_string()).trim().to_string();
-        if actual_title == "Default Title" {
-            actual_title = product.name.clone();
-        }
-
-        let variant = VariantInformation {
-            name: actual_title,
-            stock: vec![], // Stock must be loaded from a stock CSV in shopify
-            images: vec![(*cloned.variant_image.clone()).to_string()],
-            retail_price: cloned.price.parse::<f32>().unwrap(),
-            marginal_price: cloned.marginal_cost.parse::<f32>().unwrap_or(cloned.price.parse::<f32>().unwrap()),
-            loyalty_discount: DiscountValue::Absolute(0),
-            variant_code: vec![(*cloned.sku.clone()).to_string()],
-            order_history: vec![],
-            stock_information: StockInformation {
-                stock_group: (*cloned.prod_type.clone()).to_string(),
-                sales_group: (*cloned.product_category.clone()).to_string(),
-                value_stream: format!(""),
-                brand: (*cloned.vendor.clone()).to_string(),
-                unit: (*cloned.weight_unit.clone()).to_string(),
-                tax_code: (*cloned.tax_code.clone()).to_string(),
-                weight: (*cloned.weight_grams.clone()).to_string(),
-                volume: format!("0.00"),
-                max_volume: format!("0.00"),
-                back_order: false,
-                discontinued: (cloned.status.clone()) == "active",
-                non_diminishing: false,
-                shippable: (cloned.requires_shipping.clone()) == "TRUE",
-            },
-            barcode: (*cloned.barcode.clone()).to_string(),
-            id: uuid::Uuid::new_v4().to_string(),
-        };
-
-        let options = options.clone();
-
-        if cloned.option_1_value != "" { 
-            let vc: Variant = Variant { 
-                name: (*cloned.option_1_value.clone()).to_string(), 
-                images: vec![(*cloned.variant_image.clone()).to_string()], 
-                marginal_price: 0.00, 
-                variant_code: format!("{}-{}", options.clone().expect("").option_1_name, (*cloned.option_1_value.clone()).to_string()), 
-                order_history: vec![]
-            };
-
-            let existing_index = product.variant_groups.iter().position(|x| {
-                x.category == options.clone().expect("").option_1_name
-            });
-            
-            match existing_index {
-                Some(val) => { 
-                    let existing_index_2 = product.variant_groups
-                        .get_mut(val)
-                        .expect("")
-                        .variants.iter()
-                        .position(|x| {
-                            x.name == (*cloned.option_1_value.clone()).to_string()
-                        });
-
-                    match existing_index_2 {
-                        Some(_) => {},
-                        None => {
-                            product.variant_groups
-                                .get_mut(val)
-                                .expect("")
-                                .variants
-                                .push(vc);
-                        }
-                    } 
-                },
-                None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_1_value.clone()).to_string(), options.clone().expect("").option_1_name),
-            }
-        }
-
-        if cloned.option_2_value != "" { 
-            let vc: Variant = Variant { 
-                name: (*cloned.option_2_value.clone()).to_string(), 
-                images: vec![(*cloned.variant_image.clone()).to_string()], 
-                marginal_price: 0.00, 
-                variant_code: format!("{}-{}", options.clone().expect("").option_2_name, (*cloned.option_2_value.clone()).to_string()), 
-                order_history: vec![]
-            };
-
-            let existing_index = product.variant_groups.iter().position(|x| {
-                x.category == options.clone().expect("").option_2_name
-            });
-
-            match existing_index {
-                Some(val) => {
-                    let existing_index_2 = product.variant_groups
-                        .get_mut(val)
-                        .expect("")
-                        .variants.iter()
-                        .position(|x| {
-                            x.name == (*cloned.option_2_value.clone()).to_string()
-                        });
-
-                    match existing_index_2 {
-                        Some(_) => {},
-                        None => {
-                            product.variant_groups
-                                .get_mut(val)
-                                .expect("")
-                                .variants
-                                .push(vc);
-                        }
-                    } 
-                },
-                None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_2_value.clone()).to_string(), options.clone().expect("").option_2_name),
-            }
-        }
-
-        if cloned.option_3_value != "" { 
-            let vc: Variant = Variant { 
-                name: (*cloned.option_3_value.clone()).to_string(), 
-                images: vec![(*cloned.variant_image.clone()).to_string()], 
-                marginal_price: 0.00, 
-                variant_code: format!("{}-{}", options.clone().expect("").option_3_name, (*cloned.option_3_value.clone()).to_string()), 
-                order_history: vec![]
-            };
-
-            let existing_index = product.variant_groups.iter().position(|x| {
-                x.category == options.clone().expect("").option_3_name
-            });
-
-            match existing_index {
-                Some(val) => {
-                    let existing_index_2 = product.variant_groups
-                        .get_mut(val)
-                        .expect("")
-                        .variants.iter()
-                        .position(|x| {
-                            x.name == (*cloned.option_3_value.clone()).to_string()
-                        });
-
-                    match existing_index_2 {
-                        Some(_) => {},
-                        None => {
-                            product.variant_groups
-                                .get_mut(val)
-                                .expect("")
-                                .variants
-                                .push(vc);
-                        }
-                    } 
-                },
-                None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_3_value.clone()).to_string(), options.expect("").option_3_name),
-            }
-        }
-        
-        product.variants.push(variant);
-        *line += 1;
+impl Parsable<CustomerRecord> for Customer {
+    fn parse_individual(reader: &Vec<Result<CustomerRecord, csv::Error>>, line: &mut usize) -> Result<Customer, ParseFailure> {
+        // let mut customer: Customer;
+        // Ok(customer)    
+        Err(ParseFailure::EOFException)
     }
+}
 
-    Ok(product)
+impl Parsable<TransactionRecord> for Transaction {
+    fn parse_individual(reader: &Vec<Result<TransactionRecord, csv::Error>>, line: &mut usize) -> Result<Transaction, ParseFailure> {
+        Err(ParseFailure::EOFException)
+    }
+}
+
+impl Parsable<ProductRecord> for Product {
+    fn parse_individual(reader: &Vec<Result<ProductRecord, csv::Error>>, line: &mut usize) -> Result<Product, ParseFailure> {
+        let init_line = line.clone();
+        let mut options: Option<Options> = None;
+        
+        let mut product: Product = {
+            // Generate Variant Groups
+            let mut vcs = vec![];
+
+            let val = match reader.get(*line) {
+                Some(v) => v,
+                None => return Err(ParseFailure::EOFException)
+            };
+
+            let cloned = (*val.clone()).as_ref().unwrap();
+
+            if cloned.title == "" {
+                *line += 1;
+                return Err(ParseFailure::ReadFailure("Empty Field".to_owned()))
+            }
+
+            if cloned.option_1_name != "" { 
+                let vc: VariantCategory = VariantCategory {
+                    category: (*cloned.option_1_name.clone()).to_string(),
+                    variants: vec![]
+                };
+
+                vcs.push(vc);
+            }
+
+            if cloned.option_2_name != "" { 
+                let vc: VariantCategory = VariantCategory {
+                    category: (*cloned.option_2_name.clone()).to_string(),
+                    variants: vec![]
+                };
+
+                vcs.push(vc);
+            }
+
+            if cloned.option_3_name != "" { 
+                let vc: VariantCategory = VariantCategory {
+                    category: (*cloned.option_3_name.clone()).to_string(),
+                    variants: vec![]
+                };
+
+                vcs.push(vc); 
+            }
+
+            options = Some(Options {
+                option_1_name: (*cloned.option_1_name.clone()).to_string(),
+                option_2_name: (*cloned.option_2_name.clone()).to_string(),
+                option_3_name: (*cloned.option_3_name.clone()).to_string()
+            });
+
+            Product {
+                name: (*cloned.title.clone()).to_string(),
+                company: (*cloned.vendor.clone()).to_string(),
+                variant_groups: vcs,
+                variants: vec![],
+                sku: uuid::Uuid::new_v4().to_string(),
+                images: vec![(*cloned.image_url.clone()).to_string()],
+                tags: vec![(*cloned.tags.clone()).to_string()],
+                description: (*cloned.body.clone()).to_string(),
+                specifications: vec![],
+            }
+        };
+
+        // Keep parsing till reached.
+        loop {
+            let val = match reader.get(*line) {
+                Some(v) => v,
+                None => {
+                    break
+                }
+            };
+
+            let cloned = (*val.clone()).as_ref().unwrap();
+
+            if (*cloned.title.clone()).to_string() != "" && *line.deref() != init_line {
+                // Should skip line, is a new product
+                break;
+            }else if (*cloned.title.clone()).to_string() == "" && cloned.price == "" {
+                // End of valid product range
+                break;
+            }
+
+            let mut actual_title = format!("{} {} {}", (*cloned.option_1_value.clone()).to_string(), (*cloned.option_2_value.clone()).to_string(), (*cloned.option_3_value.clone()).to_string()).trim().to_string();
+            if actual_title == "Default Title" {
+                actual_title = product.name.clone();
+            }
+
+            let price = match cloned.price.parse::<f32>() {
+                Ok(p) => p,
+                Err(err) => return Err(ParseFailure::FormatFailure(err.to_string()))
+            };
+
+            let variant = VariantInformation {
+                name: actual_title,
+                stock: vec![], // Stock must be loaded from a stock CSV in shopify
+                images: vec![(*cloned.variant_image.clone()).to_string()],
+                retail_price: price,
+                marginal_price: cloned.marginal_cost.parse::<f32>().unwrap_or(price),
+                loyalty_discount: DiscountValue::Absolute(0),
+                variant_code: vec![(*cloned.sku.clone()).to_string()],
+                order_history: vec![],
+                stock_information: StockInformation {
+                    stock_group: (*cloned.prod_type.clone()).to_string(),
+                    sales_group: (*cloned.product_category.clone()).to_string(),
+                    value_stream: format!(""),
+                    brand: (*cloned.vendor.clone()).to_string(),
+                    unit: (*cloned.weight_unit.clone()).to_string(),
+                    tax_code: (*cloned.tax_code.clone()).to_string(),
+                    weight: (*cloned.weight_grams.clone()).to_string(),
+                    volume: format!("0.00"),
+                    max_volume: format!("0.00"),
+                    back_order: false,
+                    discontinued: (cloned.status.clone()) == "active",
+                    non_diminishing: false,
+                    shippable: (cloned.requires_shipping.clone()) == "TRUE",
+                },
+                barcode: (*cloned.barcode.clone()).to_string(),
+                id: uuid::Uuid::new_v4().to_string(),
+            };
+
+            let options = options.clone();
+
+            if cloned.option_1_value != "" { 
+                let vc: Variant = Variant { 
+                    name: (*cloned.option_1_value.clone()).to_string(), 
+                    images: vec![(*cloned.variant_image.clone()).to_string()], 
+                    marginal_price: 0.00, 
+                    variant_code: format!("{}-{}", options.clone().expect("").option_1_name, (*cloned.option_1_value.clone()).to_string()), 
+                    order_history: vec![]
+                };
+
+                let existing_index = product.variant_groups.iter().position(|x| {
+                    x.category == options.clone().expect("").option_1_name
+                });
+                
+                match existing_index {
+                    Some(val) => { 
+                        let existing_index_2 = product.variant_groups
+                            .get_mut(val)
+                            .expect("")
+                            .variants.iter()
+                            .position(|x| {
+                                x.name == (*cloned.option_1_value.clone()).to_string()
+                            });
+
+                        match existing_index_2 {
+                            Some(_) => {},
+                            None => {
+                                product.variant_groups
+                                    .get_mut(val)
+                                    .expect("")
+                                    .variants
+                                    .push(vc);
+                            }
+                        } 
+                    },
+                    None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_1_value.clone()).to_string(), options.clone().expect("").option_1_name),
+                }
+            }
+
+            if cloned.option_2_value != "" { 
+                let vc: Variant = Variant { 
+                    name: (*cloned.option_2_value.clone()).to_string(), 
+                    images: vec![(*cloned.variant_image.clone()).to_string()], 
+                    marginal_price: 0.00, 
+                    variant_code: format!("{}-{}", options.clone().expect("").option_2_name, (*cloned.option_2_value.clone()).to_string()), 
+                    order_history: vec![]
+                };
+
+                let existing_index = product.variant_groups.iter().position(|x| {
+                    x.category == options.clone().expect("").option_2_name
+                });
+
+                match existing_index {
+                    Some(val) => {
+                        let existing_index_2 = product.variant_groups
+                            .get_mut(val)
+                            .expect("")
+                            .variants.iter()
+                            .position(|x| {
+                                x.name == (*cloned.option_2_value.clone()).to_string()
+                            });
+
+                        match existing_index_2 {
+                            Some(_) => {},
+                            None => {
+                                product.variant_groups
+                                    .get_mut(val)
+                                    .expect("")
+                                    .variants
+                                    .push(vc);
+                            }
+                        } 
+                    },
+                    None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_2_value.clone()).to_string(), options.clone().expect("").option_2_name),
+                }
+            }
+
+            if cloned.option_3_value != "" { 
+                let vc: Variant = Variant { 
+                    name: (*cloned.option_3_value.clone()).to_string(), 
+                    images: vec![(*cloned.variant_image.clone()).to_string()], 
+                    marginal_price: 0.00, 
+                    variant_code: format!("{}-{}", options.clone().expect("").option_3_name, (*cloned.option_3_value.clone()).to_string()), 
+                    order_history: vec![]
+                };
+
+                let existing_index = product.variant_groups.iter().position(|x| {
+                    x.category == options.clone().expect("").option_3_name
+                });
+
+                match existing_index {
+                    Some(val) => {
+                        let existing_index_2 = product.variant_groups
+                            .get_mut(val)
+                            .expect("")
+                            .variants.iter()
+                            .position(|x| {
+                                x.name == (*cloned.option_3_value.clone()).to_string()
+                            });
+
+                        match existing_index_2 {
+                            Some(_) => {},
+                            None => {
+                                product.variant_groups
+                                    .get_mut(val)
+                                    .expect("")
+                                    .variants
+                                    .push(vc);
+                            }
+                        } 
+                    },
+                    None => println!("[err]: Failed trying to place variant {} in group {}.", (*cloned.option_3_value.clone()).to_string(), options.expect("").option_3_name),
+                }
+            }
+            
+            product.variants.push(variant);
+            *line += 1;
+        }
+
+        Ok(product)
+    }
 }

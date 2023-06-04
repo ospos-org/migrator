@@ -11,18 +11,19 @@ pub enum ParseFailure {
     EOFException
 }
 
+// type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
 type ProductParser = fn(Reader<File>) -> Result<Vec<Product>, ParseFailure>;
 type CustomerParser = fn(Reader<File>) -> Result<Vec<Customer>, ParseFailure>;
 type TransactionParser = fn(Reader<File>) -> Result<Vec<Transaction>, ParseFailure>;
 
-pub static PRODUCT_FORMATS: Map<&'static str, ProductParser> = phf_map! {
-    "shopify" => format::shopify::parse_products
+pub static PRODUCT_FORMATS: phf::Map<&'static str, ProductParser> = phf_map! {
+    "shopify" => format::shopify::parse_type
 };
 
 pub static CUSTOMER_FORMATS: Map<&'static str, CustomerParser> = phf_map! {
-    "shopify" => format::shopify::parse_customers
+    "shopify" => format::shopify::parse_type
 };
 
 pub static TRANSACTION_FORMATS: Map<&'static str, TransactionParser> = phf_map! {
-    "shopify" => format::shopify::parse_transactions
+    "shopify" => format::shopify::parse_type
 };
