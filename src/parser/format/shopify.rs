@@ -1,8 +1,9 @@
 use std::{fs::File, ops::Deref};
 use csv::Reader;
-use open_stock::{Product, VariantInformation, DiscountValue, StockInformation, VariantCategory, Variant, Customer, Transaction};
+use open_stock::{Product, VariantInformation, DiscountValue, StockInformation, VariantCategory, Variant, Customer, Transaction, ContactInformation, MobileNumber, Email, Address, Note};
 use serde::{Serialize, Deserialize};
 use crate::{parser::ParseFailure};
+use chrono::prelude::*;
 
 #[derive(Debug, Clone)]
 struct Options {
@@ -152,7 +153,7 @@ pub struct CustomerRecord {
     #[serde(rename = "Email")]
     email: String,
 
-    #[serde(rename = "Accepts Email Marketing Name")]
+    #[serde(rename = "Accepts Email Marketing")]
     accepts_marketing: String,
 
     #[serde(rename = "Company")]
@@ -185,7 +186,7 @@ pub struct CustomerRecord {
     #[serde(rename = "Phone")]
     phone_number: String,
 
-    #[serde(rename = "Accepts SMS")]
+    #[serde(rename = "Accepts SMS Marketing")]
     accepts_sms: String,
 
     #[serde(rename = "Total Spent")]
@@ -453,9 +454,43 @@ pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(mut reade
 
 impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(reader: &Vec<Result<CustomerRecord, csv::Error>>, line: &mut usize) -> Result<Customer, ParseFailure> {
-        // let mut customer: Customer;
-        // Ok(customer)    
-        Err(ParseFailure::EOFException)
+        let customer: Customer = {
+            let line_value = match reader.get(*line) {
+                Some(value) => value,
+                None => return Err(ParseFailure::EOFException)
+            };
+
+            let cloned = (*line_value.clone()).as_ref().unwrap();
+            let name = format!("{} {}", cloned.first_name, cloned.last_name);
+
+            Customer { 
+                id: uuid::Uuid::new_v4().to_string(), 
+                name: name.clone(), 
+                contact: ContactInformation { 
+                    name: name, 
+                    mobile: MobileNumber::from(cloned.phone_number.clone()), 
+                    email: Email::from(cloned.email.clone()), 
+                    landline: cloned.phone_number.clone(), 
+                    address: Address { 
+                        street: cloned.address_street.clone(), 
+                        street2: cloned.address_suburb.clone(), 
+                        city: cloned.address_city.clone(), 
+                        country: cloned.address_country.clone(), 
+                        po_code: cloned.address_zip.clone(), 
+                        lat: 0.0, 
+                        lon: 0.0 
+                    }
+                },
+                customer_notes: vec![ Note { message: cloned.note.clone(), author: "SHOPIFY-IMPORT".to_string(), timestamp: Utc::now() }], 
+                balance: 0.0, 
+                special_pricing: if cloned.tax_exempt == "yes" { "TAX-EXEMPT".to_string() } else { "".to_string() }, 
+                accepts_marketing: if cloned.accepts_marketing == "yes" {true} else {false}
+            }
+        };
+
+        *line += 1;
+
+        Ok(customer)
     }
 }
 
