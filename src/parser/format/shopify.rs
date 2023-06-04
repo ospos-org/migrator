@@ -1,8 +1,15 @@
 use std::{fs::File, ops::Deref};
 use csv::Reader;
-use open_stock::{Product, VariantInformation, DiscountValue, StockInformation, VariantCategory, Variant};
+use open_stock::{Product, VariantInformation, DiscountValue, StockInformation, VariantCategory, Variant, Customer, Transaction};
 use serde::{Serialize, Deserialize};
-use crate::parser::ParseFailure;
+use crate::{parser::ParseFailure};
+
+#[derive(Debug, Clone)]
+struct Options {
+    option_1_name: String,
+    option_2_name: String,
+    option_3_name: String
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Record {
@@ -130,17 +137,30 @@ struct Record {
     google_custom_product: String,
 }
 
-pub fn parse_product(mut reader: Reader<File>, file_type: String) -> Result<Vec<Product>, ParseFailure> {
+pub fn parse_customers(mut reader: Reader<File>) -> Result<Vec<Customer>, ParseFailure> {
+    Err(ParseFailure::EOFException)
+}
+
+pub fn parse_transactions(mut reader: Reader<File>) -> Result<Vec<Transaction>, ParseFailure> {
+    Err(ParseFailure::EOFException)
+}
+
+pub fn parse_products(mut reader: Reader<File>) -> Result<Vec<Product>, ParseFailure> {
     let collected: Vec<Result<Record, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
     let mut products: Vec<Product> = vec![];
 
     loop {
         // Run following till EOF
-        match parse_individual(&collected, &mut iterator) {
+        match parse_individual_product(&collected, &mut iterator) {
             Ok(pdt) => products.push(pdt),
-            Err(_) => {
-                break;
+            Err(err) => {
+                match err {
+                    ParseFailure::EOFException => break,
+                    error => {
+                        println!("[warn]: Parser Warning: {:?}", error);
+                    }
+                }
             },
         }
     }
@@ -148,14 +168,7 @@ pub fn parse_product(mut reader: Reader<File>, file_type: String) -> Result<Vec<
     Ok(products)
 }
 
-#[derive(Debug, Clone)]
-struct Options {
-    option_1_name: String,
-    option_2_name: String,
-    option_3_name: String
-}
-
-fn parse_individual(reader: &Vec<Result<Record, csv::Error>>, line: &mut usize) -> Result<Product, ParseFailure> {
+fn parse_individual_product(reader: &Vec<Result<Record, csv::Error>>, line: &mut usize) -> Result<Product, ParseFailure> {
     let init_line = line.clone();
     let mut options: Option<Options> = None;
     
@@ -165,9 +178,15 @@ fn parse_individual(reader: &Vec<Result<Record, csv::Error>>, line: &mut usize) 
 
         let val = match reader.get(*line) {
             Some(v) => v,
-            None => return Err(ParseFailure::ReadFailure("Failed to get first line".to_string()))
+            None => return Err(ParseFailure::EOFException)
         };
+
         let cloned = (*val.clone()).as_ref().unwrap();
+
+        if cloned.title == "" {
+            *line += 1;
+            return Err(ParseFailure::ReadFailure("Empty Field".to_owned()))
+        }
 
         if cloned.option_1_name != "" { 
             let vc: VariantCategory = VariantCategory {
@@ -227,11 +246,20 @@ fn parse_individual(reader: &Vec<Result<Record, csv::Error>>, line: &mut usize) 
         let cloned = (*val.clone()).as_ref().unwrap();
 
         if (*cloned.title.clone()).to_string() != "" && *line.deref() != init_line {
+            // Should skip line, is a new product
+            break;
+        }else if (*cloned.title.clone()).to_string() == "" && cloned.price == "" {
+            // End of valid product range
             break;
         }
 
+        let mut actual_title = format!("{} {} {}", (*cloned.option_1_value.clone()).to_string(), (*cloned.option_2_value.clone()).to_string(), (*cloned.option_3_value.clone()).to_string()).trim().to_string();
+        if actual_title == "Default Title" {
+            actual_title = product.name.clone();
+        }
+
         let variant = VariantInformation {
-            name: format!("{} {} {}", (*cloned.option_1_value.clone()).to_string(), (*cloned.option_2_value.clone()).to_string(), (*cloned.option_3_value.clone()).to_string()).trim().to_string(),
+            name: actual_title,
             stock: vec![], // Stock must be loaded from a stock CSV in shopify
             images: vec![(*cloned.variant_image.clone()).to_string()],
             retail_price: cloned.price.parse::<f32>().unwrap(),

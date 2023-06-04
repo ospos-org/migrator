@@ -1,4 +1,4 @@
-use clap::{self, Arg, Command, ArgAction};
+use clap::{self, Command};
 use crate::parser::read_file;
 
 mod parser;
@@ -42,10 +42,18 @@ fn main() {
             let format: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("format").expect("Expected value 'format'. ").to_string();
             let file_type: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("type").expect("Expected value 'type'. ").to_string();
 
-            let rdr = csv::Reader::from_path(file).unwrap();
-            let products = read_file(rdr, format, file_type);
-
-            println!("{}", products);
+            match csv::Reader::from_path(file) {
+                Ok(rdr) => {
+                    let results = read_file(rdr, format, file_type);
+                    println!("PRODUCTS: \n{}", results.0);
+                    println!("CUSTOMERS: \n{}", results.1);
+                    println!("TRANSACTIONS: \n{}", results.2); 
+                },
+                Err(error) => {
+                    println!("{:?}", error)
+                }
+            }
+           
         },
         _ => unreachable!("This shouldn't happen, please file a bug report."),
     }
