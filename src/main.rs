@@ -4,11 +4,12 @@ use std::{
     path::Path,
 };
 
-use crate::parser::classify_type;
-use crate::parser::read_file;
+use crate::parser::{classify_type, Products};
+use crate::parser::{read_file, Customers, Transactions};
 
 use crate::parser::Classification;
 use clap::{self, Command};
+use open_stock::{Customer, Product, Transaction};
 
 mod parser;
 fn main() {
@@ -23,7 +24,7 @@ fn main() {
             Command::new("parse")
                 .short_flag('p')
                 .long_flag("parse")
-                .about("Parse an input file into the OpenRetail format")
+                .about("Parse a folder of exports into the OpenRetail format")
                 .arg(
                     clap::arg!(<FOLDER> "Input folder")
                         .id("folder")
@@ -53,21 +54,28 @@ fn main() {
                 }
             };
 
+            let mut db: (Vec<Product>, Vec<Customer>, Vec<Transaction>) = (vec![], vec![], vec![]);
+
             for c in classifications {
                 println!("Parsing {:?}", c);
 
                 match csv::Reader::from_path(c.path) {
                     Ok(rdr) => {
-                        let results = read_file(rdr, c.branding, c.variant);
-                        // println!("PRODUCTS: \n{}", results.0);
-                        // println!("CUSTOMERS: \n{}", results.1);
-                        // println!("TRANSACTIONS: \n{}", results.2);
+                        // let mut results =
+                        read_file(rdr, c.branding, c.variant, &mut db);
+                        // db.0.append(&mut (results.0).0);
+                        // db.1.append(&mut (results.1).0);
+                        // db.2.append(&mut (results.2).0);
                     }
                     Err(error) => {
                         println!("{:?}", error)
                     }
                 }
             }
+
+            println!("[PRODUCTS]: \n{}", Products(db.0));
+            println!("[CUSTOMERS]: \n{}", Customers(db.1));
+            println!("[TRANSACTIONS]: \n{}", Transactions(db.2));
         }
         _ => unreachable!("This shouldn't happen, please file a bug report."),
     }

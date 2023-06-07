@@ -21,7 +21,7 @@ pub trait Parsable<R> {
     fn parse_individual(
         reader: &Vec<Result<R, csv::Error>>,
         line: &mut usize,
-        db: (&[Product], &[Customer], &[Transaction]),
+        db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized;

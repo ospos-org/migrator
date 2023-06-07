@@ -41,20 +41,17 @@ pub fn read_file(
     reader: Reader<File>,
     format: String,
     file_type: ParseType,
-) -> (Products, Customers, Transactions) {
-    let mut products: Products = Products(vec![]);
-    let mut customers: Customers = Customers(vec![]);
-    let mut transactions: Transactions = Transactions(vec![]);
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+) {
+    // let mut products: Products = Products(vec![]);
+    // let mut customers: Customers = Customers(vec![]);
+    // let mut transactions: Transactions = Transactions(vec![]);
 
-    let db = (
-        products.0.as_ref(),
-        customers.0.as_ref(),
-        transactions.0.as_ref(),
-    );
-
-    if format == "none" {
-        return (products, customers, transactions);
-    }
+    // let db = (
+    //     products.0.as_ref(),
+    //     customers.0.as_ref(),
+    //     transactions.0.as_ref(),
+    // );
 
     match file_type {
         ParseType::Product => {
@@ -63,7 +60,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(pdt) => products = Products(pdt),
+                        Ok(mut pdt) => (*db).0.append(&mut pdt),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);
@@ -81,7 +78,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(custom) => customers = Customers(custom),
+                        Ok(mut custom) => (*db).1.append(&mut custom),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);
@@ -99,7 +96,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(trans) => transactions = Transactions(trans),
+                        Ok(mut trans) => (*db).2.append(&mut trans),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);
@@ -112,6 +109,4 @@ pub fn read_file(
             }
         }
     }
-
-    (products, customers, transactions)
 }
