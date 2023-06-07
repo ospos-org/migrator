@@ -33,12 +33,14 @@ impl fmt::Display for Transactions {
     }
 }
 
+use crate::parser::ParseType;
+
 use super::{CUSTOMER_FORMATS, PRODUCT_FORMATS, TRANSACTION_FORMATS};
 
 pub fn read_file(
     reader: Reader<File>,
     format: String,
-    file_type: String,
+    file_type: ParseType,
 ) -> (Products, Customers, Transactions) {
     let mut products: Products = Products(vec![]);
     let mut customers: Customers = Customers(vec![]);
@@ -50,8 +52,12 @@ pub fn read_file(
         transactions.0.as_ref(),
     );
 
-    match file_type.as_str() {
-        "product" | "products" => {
+    if format == "none" {
+        return (products, customers, transactions);
+    }
+
+    match file_type {
+        ParseType::Product => {
             match PRODUCT_FORMATS.get(&format) {
                 Some(executor) => {
                     let result = executor(reader, db);
@@ -69,7 +75,7 @@ pub fn read_file(
                 }
             }
         }
-        "customer" | "customers" => {
+        ParseType::Customer => {
             match CUSTOMER_FORMATS.get(&format) {
                 Some(executor) => {
                     let result = executor(reader, db);
@@ -87,7 +93,7 @@ pub fn read_file(
                 }
             }
         }
-        "order" | "orders" | "transaction" | "transactions" => {
+        ParseType::Transaction => {
             match TRANSACTION_FORMATS.get(&format) {
                 Some(executor) => {
                     let result = executor(reader, db);
@@ -104,12 +110,6 @@ pub fn read_file(
                     panic!("No respective key exists, {}.", format)
                 }
             }
-        }
-        _ => {
-            println!(
-                "File type \"{}\" unknown. Valid types are: product, customer and order.",
-                file_type
-            )
         }
     }
 

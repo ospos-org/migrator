@@ -1,5 +1,14 @@
-use clap::{self, Command};
+use std::{
+    fs::{self, DirEntry},
+    io::{self},
+    path::Path,
+};
+
+use crate::parser::classify_type;
 use crate::parser::read_file;
+
+use crate::parser::Classification;
+use clap::{self, Command};
 
 mod parser;
 fn main() {
@@ -16,45 +25,71 @@ fn main() {
                 .long_flag("parse")
                 .about("Parse an input file into the OpenRetail format")
                 .arg(
-                    clap::arg!(-i --input <FILE> "Sets input file")
-                        .id("input")
+                    clap::arg!(<FOLDER> "Input folder")
+                        .id("folder")
                         .required(true)
-                        .value_parser(clap::value_parser!(String))
-                )
-                .arg(
-                    clap::arg!(-f --format <FORMAT> "Sets input file format")
-                        .id("format")
-                        .required(true)
-                        .value_parser(clap::value_parser!(String))
-                )
-                .arg(
-                    clap::arg!(-t --type <TYPE> "Sets input file type")
-                        .id("type")
-                        .required(true)
-                        .value_parser(clap::value_parser!(String))
-                )
+                        .value_parser(clap::value_parser!(String)),
+                ),
         )
         .get_matches();
 
     match cmd.subcommand_name() {
         Some("parse") => {
-            let file: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("input").expect("Expected value 'input'. ").to_string();
-            let format: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("format").expect("Expected value 'format'. ").to_string();
-            let file_type: String = cmd.subcommand_matches("parse").expect("?").get_one::<String>("type").expect("Expected value 'type'. ").to_string();
+            let folder: String = cmd
+                .subcommand_matches("parse")
+                .expect("?")
+                .get_one::<String>("folder")
+                .expect("Expected value 'folder'. ")
+                .to_string();
 
-            match csv::Reader::from_path(file) {
-                Ok(rdr) => {
-                    let results = read_file(rdr, format, file_type);
-                    println!("PRODUCTS: \n{}", results.0);
-                    println!("CUSTOMERS: \n{}", results.1);
-                    println!("TRANSACTIONS: \n{}", results.2); 
-                },
-                Err(error) => {
-                    println!("{:?}", error)
+            let path = Path::new(folder.as_str());
+            let classifications = match traverse_directories(path, &classify_type) {
+                Ok(v) => v,
+                Err(err) => {
+                    panic!(
+                        "[err]: Execution error in parsing files in provided directory, {}",
+                        err
+                    );
+                }
+            };
+
+            for c in classifications {
+                println!("Parsing {:?}", c);
+
+                match csv::Reader::from_path(c.path) {
+                    Ok(rdr) => {
+                        let results = read_file(rdr, c.branding, c.variant);
+                        // println!("PRODUCTS: \n{}", results.0);
+                        // println!("CUSTOMERS: \n{}", results.1);
+                        // println!("TRANSACTIONS: \n{}", results.2);
+                    }
+                    Err(error) => {
+                        println!("{:?}", error)
+                    }
                 }
             }
-           
-        },
+        }
         _ => unreachable!("This shouldn't happen, please file a bug report."),
     }
+}
+
+fn traverse_directories(
+    dir: &Path,
+    cb: &dyn Fn(&DirEntry) -> Classification,
+) -> Result<Vec<Classification>, io::Error> {
+    let mut classifications = vec![];
+
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                traverse_directories(&path, cb)?;
+            } else {
+                classifications.push(cb(&entry))
+            }
+        }
+    }
+
+    Ok(classifications)
 }

@@ -1,8 +1,24 @@
-use crate::parser::format;
+use crate::{
+    parser::format, parser::lightrail::CustomerRecord as lCR,
+    parser::lightrail::ProductRecord as lPR, parser::lightrail::TransactionRecord as lTR,
+    parser::shopify::CustomerRecord as sCR, parser::shopify::ProductRecord as sPR,
+    parser::shopify::TransactionRecord as sTR,
+};
+
+use crate::parser::ParseType;
+
 use csv::Reader;
 use open_stock::{Customer, Product, Transaction};
 use phf::{phf_map, Map};
-use std::fs::File;
+use std::path::PathBuf;
+use std::{
+    fs::{DirEntry, File},
+    io::{BufRead, BufReader},
+    usize::MAX,
+};
+use strsim::levenshtein;
+
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub enum ParseFailure {
@@ -26,13 +42,65 @@ type TransactionParser = fn(
 ) -> Result<Vec<Transaction>, ParseFailure>;
 
 pub static PRODUCT_FORMATS: phf::Map<&'static str, ProductParser> = phf_map! {
-    "shopify" => format::shopify::parse_type
+    "shopify" => format::shopify::parse_type::<open_stock::Product, sPR>,
+    "lightrail" => format::lightrail::parse_type::<open_stock::Product, lPR>
 };
 
 pub static CUSTOMER_FORMATS: Map<&'static str, CustomerParser> = phf_map! {
-    "shopify" => format::shopify::parse_type
+    "shopify" => format::shopify::parse_type::<open_stock::Customer, sCR>,
+    "lightrail" => format::lightrail::parse_type::<open_stock::Customer, lCR>,
 };
 
 pub static TRANSACTION_FORMATS: Map<&'static str, TransactionParser> = phf_map! {
-    "shopify" => format::shopify::parse_type
+    "shopify" => format::shopify::parse_type::<open_stock::Transaction, sTR>,
+    "lightrail" => format::lightrail::parse_type::<open_stock::Transaction, lTR>
 };
+
+pub static HEADER_FORMAT_MATCHERS: phf::Map<&'static str, fn(ParseType) -> String> = phf_map! {
+    "shopify" => format::shopify::match_self,
+    "lightrail" => format::lightrail::match_self
+};
+
+#[derive(Debug)]
+pub struct Classification {
+    pub score: usize,
+    pub path: PathBuf,
+    pub branding: String,
+    pub variant: ParseType,
+}
+
+pub fn classify_type(entry: &DirEntry) -> Classification {
+    let path: std::path::PathBuf = entry.path();
+
+    let open_file = File::open(path.clone()).unwrap();
+    let reader = BufReader::new(open_file);
+    let mut lines = reader.lines();
+
+    let mut best_match = Classification {
+        score: MAX,
+        path: path.clone(),
+        branding: "none".to_string(),
+        variant: ParseType::Product,
+    };
+
+    if let Some(Ok(line)) = lines.next() {
+        // println!("[{:?}]\n{}\n----\n", path.clone(), line);
+        for (key, val) in HEADER_FORMAT_MATCHERS.into_iter() {
+            for variant in ParseType::iter() {
+                let comparative = val(variant);
+                let score = levenshtein(line.as_str(), comparative.as_str());
+
+                if score < best_match.score {
+                    best_match = Classification {
+                        branding: key.to_string(),
+                        score,
+                        path: path.clone(),
+                        variant,
+                    }
+                }
+            }
+        }
+    }
+
+    best_match
+}
