@@ -1,20 +1,29 @@
-use std::fs::File;
-use csv::Reader;
 use crate::parser::format;
-use open_stock::{Product, Customer, Transaction};
-use phf::{Map, phf_map};
+use csv::Reader;
+use open_stock::{Customer, Product, Transaction};
+use phf::{phf_map, Map};
+use std::fs::File;
 
 #[derive(Debug)]
 pub enum ParseFailure {
     ReadFailure(String),
     FormatFailure(String),
-    EOFException
+    EOFException,
 }
 
 // type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
-type ProductParser = fn(Reader<File>) -> Result<Vec<Product>, ParseFailure>;
-type CustomerParser = fn(Reader<File>) -> Result<Vec<Customer>, ParseFailure>;
-type TransactionParser = fn(Reader<File>) -> Result<Vec<Transaction>, ParseFailure>;
+type ProductParser = fn(
+    Reader<File>,
+    (&[Product], &[Customer], &[Transaction]),
+) -> Result<Vec<Product>, ParseFailure>;
+type CustomerParser = fn(
+    Reader<File>,
+    (&[Product], &[Customer], &[Transaction]),
+) -> Result<Vec<Customer>, ParseFailure>;
+type TransactionParser = fn(
+    Reader<File>,
+    (&[Product], &[Customer], &[Transaction]),
+) -> Result<Vec<Transaction>, ParseFailure>;
 
 pub static PRODUCT_FORMATS: phf::Map<&'static str, ProductParser> = phf_map! {
     "shopify" => format::shopify::parse_type
