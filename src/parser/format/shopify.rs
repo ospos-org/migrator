@@ -541,6 +541,17 @@ impl Parsable<ProductRecord> for Product {
         let init_line = line.clone();
         let mut options: Option<Options> = None;
 
+        // Shopify will not provide any information like this,
+        // so we must freshly generate it.
+        let generated_sku = uuid::Uuid::new_v4().to_string();
+        let pdt_ident = open_stock::ProductIdentification {
+            sku: generated_sku.clone(),
+            ean: String::new(),
+            hs_code: String::new(),
+            article_code: String::new(),
+            isbn: String::new(),
+        };
+
         let mut product: Product = {
             // Generate Variant Groups
             let mut vcs = vec![];
@@ -595,11 +606,15 @@ impl Parsable<ProductRecord> for Product {
                 company: (*cloned.vendor.clone()).to_string(),
                 variant_groups: vcs,
                 variants: vec![],
-                sku: uuid::Uuid::new_v4().to_string(),
+                sku: generated_sku.clone(),
                 images: vec![(*cloned.image_url.clone()).to_string()],
                 tags: vec![(*cloned.tags.clone()).to_string()],
                 description: (*cloned.body.clone()).to_string(),
                 specifications: vec![],
+                name_long: (*cloned.title.clone()).to_string(),
+                identification: pdt_ident.clone(),
+                description_long: (*cloned.body.clone()).to_string(),
+                visible: open_stock::ProductVisibility::ShowWhenInStock,
             }
         };
 
@@ -645,7 +660,6 @@ impl Parsable<ProductRecord> for Product {
                     sales_group: (*cloned.product_category.clone()).to_string(),
                     value_stream: String::new(),
                     brand: (*cloned.vendor.clone()).to_string(),
-                    unit: (*cloned.weight_unit.clone()).to_string(),
                     tax_code: (*cloned.tax_code.clone()).to_string(),
                     weight: (*cloned.weight_grams.clone()).to_string(),
                     volume: "0.00".to_string(),
@@ -654,9 +668,25 @@ impl Parsable<ProductRecord> for Product {
                     discontinued: (cloned.status.clone()) == "active",
                     non_diminishing: false,
                     shippable: (cloned.requires_shipping.clone()) == "TRUE",
+                    size_override_unit: (*cloned.weight_unit.clone()).to_string(),
+                    size_x_unit: (*cloned.weight_unit.clone()).to_string(),
+                    size_y_unit: (*cloned.weight_unit.clone()).to_string(),
+                    size_z_unit: (*cloned.weight_unit.clone()).to_string(),
+                    size_x: 0.0,
+                    size_y: 0.0,
+                    size_z: 0.0,
+                    min_stock_before_alert: 0.0,
+                    min_stock_level: 0.0,
+                    colli: String::new(),
                 },
                 barcode: (*cloned.barcode.clone()).to_string(),
                 id: uuid::Uuid::new_v4().to_string(),
+                buy_max: -1.0,
+                // Considers if the quantity is a decimal,
+                // otherwise would take value `1.0`.
+                buy_min: 0.0,
+                identification: pdt_ident.clone(),
+                stock_tracking: true,
             };
 
             let options = options.clone();

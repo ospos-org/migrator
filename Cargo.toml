@@ -10,7 +10,7 @@ license = "MIT"
 
 [dependencies]
 clap = { version = "4.2.1", features = ["cargo"] }
-open-stock = "0.1.4"
+open-stock = "0.1.5"
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
 phf = { version = "0.11", features = ["macros"] }
