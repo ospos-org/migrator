@@ -7,9 +7,11 @@ use crate::{
 
 use crate::parser::ParseType;
 
+use core::fmt;
 use csv::Reader;
 use open_stock::{Customer, Product, Transaction};
 use phf::{phf_map, Map};
+use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::{
     fs::{DirEntry, File},
@@ -69,6 +71,19 @@ pub struct Classification {
     pub variant: ParseType,
 }
 
+impl Display for Classification {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(
+            f,
+            "[{}]\t{} ({:08}) - {} ",
+            self.variant,
+            self.branding,
+            self.score,
+            self.path.file_name().unwrap().to_str().unwrap(),
+        )
+    }
+}
+
 pub fn classify_type(entry: &DirEntry) -> Classification {
     let path: std::path::PathBuf = entry.path();
 
@@ -84,7 +99,6 @@ pub fn classify_type(entry: &DirEntry) -> Classification {
     };
 
     if let Some(Ok(line)) = lines.next() {
-        // println!("[{:?}]\n{}\n----\n", path.clone(), line);
         for (key, val) in HEADER_FORMAT_MATCHERS.into_iter() {
             for variant in ParseType::iter() {
                 let comparative = val(variant);

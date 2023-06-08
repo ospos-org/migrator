@@ -57,15 +57,11 @@ fn main() {
             let mut db: (Vec<Product>, Vec<Customer>, Vec<Transaction>) = (vec![], vec![], vec![]);
 
             for c in classifications {
-                println!("Parsing {:?}", c);
+                println!("{}", c);
 
                 match csv::Reader::from_path(c.path) {
                     Ok(rdr) => {
-                        // let mut results =
                         read_file(rdr, c.branding, c.variant, &mut db);
-                        // db.0.append(&mut (results.0).0);
-                        // db.1.append(&mut (results.1).0);
-                        // db.2.append(&mut (results.2).0);
                     }
                     Err(error) => {
                         println!("{:?}", error)
@@ -73,9 +69,9 @@ fn main() {
                 }
             }
 
-            println!("[PRODUCTS]: \n{}", Products(db.0));
-            println!("[CUSTOMERS]: \n{}", Customers(db.1));
-            println!("[TRANSACTIONS]: \n{}", Transactions(db.2));
+            // println!("[PRODUCTS]: \n{}", Products(db.0));
+            // println!("[CUSTOMERS]: \n{}", Customers(db.1));
+            // println!("[TRANSACTIONS]: \n{}", Transactions(db.2));
         }
         _ => unreachable!("This shouldn't happen, please file a bug report."),
     }

@@ -43,16 +43,6 @@ pub fn read_file(
     file_type: ParseType,
     db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) {
-    // let mut products: Products = Products(vec![]);
-    // let mut customers: Customers = Customers(vec![]);
-    // let mut transactions: Transactions = Transactions(vec![]);
-
-    // let db = (
-    //     products.0.as_ref(),
-    //     customers.0.as_ref(),
-    //     transactions.0.as_ref(),
-    // );
-
     match file_type {
         ParseType::Product => {
             match PRODUCT_FORMATS.get(&format) {

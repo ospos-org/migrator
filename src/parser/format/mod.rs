@@ -8,9 +8,9 @@ pub use shopify::*;
 
 use crate::parser::ParseFailure;
 
-use strum_macros::EnumIter;
+use strum_macros::{Display, EnumIter};
 
-#[derive(Debug, EnumIter, Copy, Clone)]
+#[derive(Debug, EnumIter, Copy, Clone, Display)]
 pub enum ParseType {
     Product,
     Customer,
