@@ -443,7 +443,7 @@ pub struct TransactionRecord {
 
 pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
     mut reader: Reader<File>,
-    db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) -> Result<Vec<T>, ParseFailure> {
     let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
@@ -468,7 +468,7 @@ impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(
         reader: &Vec<Result<CustomerRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Customer, ParseFailure> {
         let customer: Customer = {
             let line_value = match reader.get(*line) {
@@ -526,7 +526,7 @@ impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
         reader: &Vec<Result<TransactionRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Transaction, ParseFailure> {
         Err(ParseFailure::EOFException)
     }
@@ -536,7 +536,7 @@ impl Parsable<ProductRecord> for Product {
     fn parse_individual(
         reader: &Vec<Result<ProductRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Product, ParseFailure> {
         let init_line = line.clone();
         let mut options: Option<Options> = None;

@@ -12,16 +12,16 @@ use strum_macros::{Display, EnumIter};
 
 #[derive(Debug, EnumIter, Copy, Clone, Display)]
 pub enum ParseType {
-    Product,
-    Customer,
-    Transaction,
+    Product = 0,
+    Customer = 1,
+    Transaction = 2,
 }
 
 pub trait Parsable<R> {
     fn parse_individual(
         reader: &Vec<Result<R, csv::Error>>,
         line: &mut usize,
-        db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized;

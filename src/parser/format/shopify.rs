@@ -1,4 +1,4 @@
-use crate::parser::{Customers, ParseFailure};
+use crate::parser::ParseFailure;
 use chrono::prelude::*;
 use csv::Reader;
 use open_stock::{
@@ -290,7 +290,7 @@ pub struct TransactionRecord {
     #[serde(rename = "Lineitem taxable")]
     lineitem_taxable: String,
 
-    #[serde(rename = "Lineitem filfillment status")]
+    #[serde(rename = "Lineitem fulfillment status")]
     lineitem_fulfillment: String,
 
     #[serde(rename = "Billing Name")]
@@ -446,7 +446,7 @@ pub struct TransactionRecord {
 
 pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
     mut reader: Reader<File>,
-    db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) -> Result<Vec<T>, ParseFailure> {
     let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
@@ -471,7 +471,7 @@ impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(
         reader: &Vec<Result<CustomerRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Customer, ParseFailure> {
         let customer: Customer = {
             let line_value = match reader.get(*line) {
@@ -559,11 +559,8 @@ impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
         reader: &Vec<Result<TransactionRecord, csv::Error>>,
         line: &mut usize,
-        db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Transaction, ParseFailure> {
-        let init_line = line.clone();
-        let mut options: Option<Options> = None;
-
         let (mut order, transaction): (Order, Transaction) = {
             let val = match reader.get(*line) {
                 Some(v) => v,
@@ -575,7 +572,37 @@ impl Parsable<TransactionRecord> for Transaction {
             let customers: Vec<Customer> =
                 search_for_matching_customer(cloned_clone.order_name.clone(), (db.clone()).1);
 
-            let customer = customers[0].clone();
+            let customer: Customer = if customers.len() > 0 {
+                customers[0].clone()
+            } else {
+                let c = Customer {
+                    id: Uuid::new_v4().to_string(),
+                    name: cloned.billing_name.clone(),
+                    contact: ContactInformation {
+                        name: cloned.billing_name.clone(),
+                        mobile: MobileNumber::from(cloned.phone.clone()),
+                        email: Email::from(cloned.email.clone()),
+                        landline: cloned.phone.clone(),
+                        address: Address {
+                            street: cloned.billing_address.clone(),
+                            street2: cloned.billing_address_2.clone(),
+                            city: cloned.billing_city.clone(),
+                            country: cloned.billing_country.clone(),
+                            po_code: cloned.billing_zip.clone(),
+                            lat: 0.0,
+                            lon: 0.0,
+                        },
+                    },
+                    customer_notes: vec![],
+                    balance: 0.0,
+                    special_pricing: String::new(),
+                    accepts_marketing: cloned.accepts_marketing == "yes",
+                };
+
+                (*db).1.push(c.clone());
+
+                c
+            };
 
             (
                 Order {
@@ -697,7 +724,7 @@ impl Parsable<ProductRecord> for Product {
     fn parse_individual(
         reader: &Vec<Result<ProductRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Product, ParseFailure> {
         let init_line = *line;
         let mut options: Option<Options> = None;

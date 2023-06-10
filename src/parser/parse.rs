@@ -32,15 +32,15 @@ pub enum ParseFailure {
 // type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
 type ProductParser = fn(
     Reader<File>,
-    &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) -> Result<Vec<Product>, ParseFailure>;
 type CustomerParser = fn(
     Reader<File>,
-    &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) -> Result<Vec<Customer>, ParseFailure>;
 type TransactionParser = fn(
     Reader<File>,
-    &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
 ) -> Result<Vec<Transaction>, ParseFailure>;
 
 pub static PRODUCT_FORMATS: phf::Map<&'static str, ProductParser> = phf_map! {

@@ -45,7 +45,10 @@ fn main() {
 
             let path = Path::new(folder.as_str());
             let classifications = match traverse_directories(path, &classify_type) {
-                Ok(v) => v,
+                Ok(mut v) => {
+                    v.sort_by(|a, b| (a.variant as u32).cmp(&(b.variant as u32)));
+                    v
+                }
                 Err(err) => {
                     panic!(
                         "[err]: Execution error in parsing files in provided directory, {}",
