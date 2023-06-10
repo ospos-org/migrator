@@ -4,8 +4,8 @@ use std::{
     path::Path,
 };
 
-use crate::parser::{classify_type, Products};
-use crate::parser::{read_file, Customers, Transactions};
+use crate::parser::classify_type;
+use crate::parser::read_file;
 
 use crate::parser::Classification;
 use clap::{self, Command};

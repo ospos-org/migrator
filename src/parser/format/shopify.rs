@@ -23,6 +23,36 @@ pub fn match_self(parse_type: ParseType) -> String {
     String::from_str(matchable).unwrap()
 }
 
+fn search_for_matching_customer(customer: String, customers: Vec<Customer>) -> Vec<Customer> {
+    customers
+        .iter()
+        .filter_map(|v| {
+            if v.contact.name.contains(&customer) {
+                Some((*v).clone())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<Customer>>()
+}
+
+/// Note: This will only fill for non-disctinct instances.
+///
+/// i.e. instances with decimal quantities or unit based quantities (e.g. 3m^2)
+/// will have `n` instances, where `n` is the rounded metric quantity (e.g. 3).
+fn fill_instances(f_status: FulfillmentStatus, quantity: u32) -> Vec<ProductInstance> {
+    let mut instances = vec![];
+
+    for _ in 0..quantity {
+        instances.push(ProductInstance {
+            id: Uuid::new_v4().to_string(),
+            fulfillment_status: f_status.clone(),
+        })
+    }
+
+    instances
+}
+
 #[derive(Debug, Clone)]
 struct Options {
     option_1_name: String,
@@ -525,36 +555,6 @@ impl Parsable<CustomerRecord> for Customer {
     }
 }
 
-fn search_for_matching_customer(customer: String, customers: Vec<Customer>) -> Vec<Customer> {
-    customers
-        .iter()
-        .filter_map(|v| {
-            if v.contact.name.contains(&customer) {
-                Some((*v).clone())
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<Customer>>()
-}
-
-/// Note: This will only fill for non-disctinct instances.
-///
-/// i.e. instances with decimal quantities or unit based quantities (e.g. 3m^2)
-/// will have `n` instances, where `n` is the rounded metric quantity (e.g. 3).
-fn fill_instances(f_status: FulfillmentStatus, quantity: u32) -> Vec<ProductInstance> {
-    let mut instances = vec![];
-
-    for _ in 0..quantity {
-        instances.push(ProductInstance {
-            id: Uuid::new_v4().to_string(),
-            fulfillment_status: f_status.clone(),
-        })
-    }
-
-    instances
-}
-
 impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
         reader: &Vec<Result<TransactionRecord, csv::Error>>,
@@ -727,7 +727,6 @@ impl Parsable<ProductRecord> for Product {
         _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Product, ParseFailure> {
         let init_line = *line;
-        let mut options: Option<Options> = None;
 
         // Shopify will not provide any information like this,
         // so we must freshly generate it.
@@ -740,7 +739,7 @@ impl Parsable<ProductRecord> for Product {
             isbn: String::new(),
         };
 
-        let mut product: Product = {
+        let (mut product, options): (Product, Option<Options>) = {
             // Generate Variant Groups
             let mut vcs = vec![];
 
@@ -783,27 +782,28 @@ impl Parsable<ProductRecord> for Product {
                 vcs.push(vc);
             }
 
-            options = Some(Options {
-                option_1_name: (*cloned.option_1_name.clone()).to_string(),
-                option_2_name: (*cloned.option_2_name.clone()).to_string(),
-                option_3_name: (*cloned.option_3_name.clone()).to_string(),
-            });
-
-            Product {
-                name: (*cloned.title.clone()).to_string(),
-                company: (*cloned.vendor.clone()).to_string(),
-                variant_groups: vcs,
-                variants: vec![],
-                sku: generated_sku,
-                images: vec![(*cloned.image_url.clone()).to_string()],
-                tags: vec![(*cloned.tags.clone()).to_string()],
-                description: (*cloned.body.clone()).to_string(),
-                specifications: vec![],
-                name_long: (*cloned.title.clone()).to_string(),
-                identification: pdt_ident.clone(),
-                description_long: (*cloned.body.clone()).to_string(),
-                visible: open_stock::ProductVisibility::ShowWhenInStock,
-            }
+            (
+                Product {
+                    name: (*cloned.title.clone()).to_string(),
+                    company: (*cloned.vendor.clone()).to_string(),
+                    variant_groups: vcs,
+                    variants: vec![],
+                    sku: generated_sku,
+                    images: vec![(*cloned.image_url.clone()).to_string()],
+                    tags: vec![(*cloned.tags.clone()).to_string()],
+                    description: (*cloned.body.clone()).to_string(),
+                    specifications: vec![],
+                    name_long: (*cloned.title.clone()).to_string(),
+                    identification: pdt_ident.clone(),
+                    description_long: (*cloned.body.clone()).to_string(),
+                    visible: open_stock::ProductVisibility::ShowWhenInStock,
+                },
+                Some(Options {
+                    option_1_name: (*cloned.option_1_name.clone()).to_string(),
+                    option_2_name: (*cloned.option_2_name.clone()).to_string(),
+                    option_3_name: (*cloned.option_3_name.clone()).to_string(),
+                }),
+            )
         };
 
         // Keep parsing till reached.

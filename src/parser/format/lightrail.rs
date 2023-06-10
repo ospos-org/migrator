@@ -2,11 +2,10 @@ use crate::parser::ParseFailure;
 use chrono::prelude::*;
 use csv::Reader;
 use open_stock::{
-    Address, ContactInformation, Customer, DiscountValue, Email, MobileNumber, Note, Product,
-    StockInformation, Transaction, Variant, VariantCategory, VariantInformation,
+    Address, ContactInformation, Customer, Email, MobileNumber, Note, Product, Transaction,
 };
 use serde::{Deserialize, Serialize};
-use std::{fs::File, ops::Deref, str::FromStr};
+use std::{fs::File, str::FromStr};
 
 use super::{Parsable, ParseType};
 
@@ -18,13 +17,6 @@ pub fn match_self(parse_type: ParseType) -> String {
     };
 
     String::from_str(matchable).unwrap()
-}
-
-#[derive(Debug, Clone)]
-struct Options {
-    option_1_name: String,
-    option_2_name: String,
-    option_3_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -524,8 +516,8 @@ impl Parsable<CustomerRecord> for Customer {
 
 impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
-        reader: &Vec<Result<TransactionRecord, csv::Error>>,
-        line: &mut usize,
+        _reader: &Vec<Result<TransactionRecord, csv::Error>>,
+        _line: &mut usize,
         _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Transaction, ParseFailure> {
         Err(ParseFailure::EOFException)
@@ -534,311 +526,10 @@ impl Parsable<TransactionRecord> for Transaction {
 
 impl Parsable<ProductRecord> for Product {
     fn parse_individual(
-        reader: &Vec<Result<ProductRecord, csv::Error>>,
-        line: &mut usize,
+        _reader: &Vec<Result<ProductRecord, csv::Error>>,
+        _line: &mut usize,
         _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Product, ParseFailure> {
-        let init_line = line.clone();
-        let mut options: Option<Options> = None;
-
-        // Shopify will not provide any information like this,
-        // so we must freshly generate it.
-        let generated_sku = uuid::Uuid::new_v4().to_string();
-        let pdt_ident = open_stock::ProductIdentification {
-            sku: generated_sku.clone(),
-            ean: String::new(),
-            hs_code: String::new(),
-            article_code: String::new(),
-            isbn: String::new(),
-        };
-
-        let mut product: Product = {
-            // Generate Variant Groups
-            let mut vcs = vec![];
-
-            let val = match reader.get(*line) {
-                Some(v) => v,
-                None => return Err(ParseFailure::EOFException),
-            };
-
-            let cloned = (*val).as_ref().unwrap();
-
-            if cloned.title.is_empty() {
-                *line += 1;
-                return Err(ParseFailure::ReadFailure("Empty Field".to_owned()));
-            }
-
-            if !cloned.option_1_name.is_empty() {
-                let vc: VariantCategory = VariantCategory {
-                    category: (*cloned.option_1_name.clone()).to_string(),
-                    variants: vec![],
-                };
-
-                vcs.push(vc);
-            }
-
-            if !cloned.option_2_name.is_empty() {
-                let vc: VariantCategory = VariantCategory {
-                    category: (*cloned.option_2_name.clone()).to_string(),
-                    variants: vec![],
-                };
-
-                vcs.push(vc);
-            }
-
-            if !cloned.option_3_name.is_empty() {
-                let vc: VariantCategory = VariantCategory {
-                    category: (*cloned.option_3_name.clone()).to_string(),
-                    variants: vec![],
-                };
-
-                vcs.push(vc);
-            }
-
-            options = Some(Options {
-                option_1_name: (*cloned.option_1_name.clone()).to_string(),
-                option_2_name: (*cloned.option_2_name.clone()).to_string(),
-                option_3_name: (*cloned.option_3_name.clone()).to_string(),
-            });
-
-            Product {
-                name: (*cloned.title.clone()).to_string(),
-                company: (*cloned.vendor.clone()).to_string(),
-                variant_groups: vcs,
-                variants: vec![],
-                sku: generated_sku.clone(),
-                images: vec![(*cloned.image_url.clone()).to_string()],
-                tags: vec![(*cloned.tags.clone()).to_string()],
-                description: (*cloned.body.clone()).to_string(),
-                specifications: vec![],
-                name_long: (*cloned.title.clone()).to_string(),
-                identification: pdt_ident.clone(),
-                description_long: (*cloned.body.clone()).to_string(),
-                visible: open_stock::ProductVisibility::ShowWhenInStock,
-            }
-        };
-
-        // Keep parsing till reached.
-        while let Some(val) = reader.get(*line) {
-            let cloned = (*val).as_ref().unwrap();
-
-            if (*cloned.title.clone()).to_string() != "" && *line.deref() != init_line
-                || (*cloned.title.clone()).to_string() == "" && cloned.price.is_empty()
-            {
-                // End of valid product range
-                break;
-            }
-
-            let mut actual_title = format!(
-                "{} {} {}",
-                &(*cloned.option_1_value.clone()),
-                &(*cloned.option_2_value.clone()),
-                &(*cloned.option_3_value.clone())
-            )
-            .trim()
-            .to_string();
-            if actual_title == "Default Title" {
-                actual_title = product.name.clone();
-            }
-
-            let price = match cloned.price.parse::<f32>() {
-                Ok(p) => p,
-                Err(err) => return Err(ParseFailure::FormatFailure(err.to_string())),
-            };
-
-            let variant = VariantInformation {
-                name: actual_title,
-                stock: vec![], // Stock must be loaded from a stock CSV in shopify
-                images: vec![(*cloned.variant_image.clone()).to_string()],
-                retail_price: price,
-                marginal_price: cloned.marginal_cost.parse::<f32>().unwrap_or(price),
-                loyalty_discount: DiscountValue::Absolute(0),
-                variant_code: vec![(*cloned.sku.clone()).to_string()],
-                order_history: vec![],
-                stock_information: StockInformation {
-                    stock_group: (*cloned.prod_type.clone()).to_string(),
-                    sales_group: (*cloned.product_category.clone()).to_string(),
-                    value_stream: String::new(),
-                    brand: (*cloned.vendor.clone()).to_string(),
-                    tax_code: (*cloned.tax_code.clone()).to_string(),
-                    weight: (*cloned.weight_grams.clone()).to_string(),
-                    volume: "0.00".to_string(),
-                    max_volume: "0.00".to_string(),
-                    back_order: false,
-                    discontinued: (cloned.status.clone()) == "active",
-                    non_diminishing: false,
-                    shippable: (cloned.requires_shipping.clone()) == "TRUE",
-                    size_override_unit: (*cloned.weight_unit.clone()).to_string(),
-                    size_x_unit: (*cloned.weight_unit.clone()).to_string(),
-                    size_y_unit: (*cloned.weight_unit.clone()).to_string(),
-                    size_z_unit: (*cloned.weight_unit.clone()).to_string(),
-                    size_x: 0.0,
-                    size_y: 0.0,
-                    size_z: 0.0,
-                    min_stock_before_alert: 0.0,
-                    min_stock_level: 0.0,
-                    colli: String::new(),
-                },
-                barcode: (*cloned.barcode.clone()).to_string(),
-                id: uuid::Uuid::new_v4().to_string(),
-                buy_max: -1.0,
-                // Considers if the quantity is a decimal,
-                // otherwise would take value `1.0`.
-                buy_min: 0.0,
-                identification: pdt_ident.clone(),
-                stock_tracking: true,
-            };
-
-            let options = options.clone();
-
-            if !cloned.option_1_value.is_empty() {
-                let vc: Variant = Variant {
-                    name: (*cloned.option_1_value.clone()).to_string(),
-                    images: vec![(*cloned.variant_image.clone()).to_string()],
-                    marginal_price: 0.00,
-                    variant_code: format!(
-                        "{}-{}",
-                        options.clone().expect("").option_1_name,
-                        &(*cloned.option_1_value.clone())
-                    ),
-                    order_history: vec![],
-                };
-
-                let existing_index = product
-                    .variant_groups
-                    .iter()
-                    .position(|x| x.category == options.clone().expect("").option_1_name);
-
-                match existing_index {
-                    Some(val) => {
-                        let existing_index_2 = product
-                            .variant_groups
-                            .get_mut(val)
-                            .expect("")
-                            .variants
-                            .iter()
-                            .position(|x| x.name == (*cloned.option_1_value.clone()));
-
-                        match existing_index_2 {
-                            Some(_) => {}
-                            None => {
-                                product
-                                    .variant_groups
-                                    .get_mut(val)
-                                    .expect("")
-                                    .variants
-                                    .push(vc);
-                            }
-                        }
-                    }
-                    None => println!(
-                        "[err]: Failed trying to place variant {} in group {}.",
-                        &(*cloned.option_1_value.clone()),
-                        options.clone().expect("").option_1_name
-                    ),
-                }
-            }
-
-            if !cloned.option_2_value.is_empty() {
-                let vc: Variant = Variant {
-                    name: (*cloned.option_2_value.clone()).to_string(),
-                    images: vec![(*cloned.variant_image.clone()).to_string()],
-                    marginal_price: 0.00,
-                    variant_code: format!(
-                        "{}-{}",
-                        options.clone().expect("").option_2_name,
-                        &(*cloned.option_2_value.clone())
-                    ),
-                    order_history: vec![],
-                };
-
-                let existing_index = product
-                    .variant_groups
-                    .iter()
-                    .position(|x| x.category == options.clone().expect("").option_2_name);
-
-                match existing_index {
-                    Some(val) => {
-                        let existing_index_2 = product
-                            .variant_groups
-                            .get_mut(val)
-                            .expect("")
-                            .variants
-                            .iter()
-                            .position(|x| x.name == (*cloned.option_2_value.clone()));
-
-                        match existing_index_2 {
-                            Some(_) => {}
-                            None => {
-                                product
-                                    .variant_groups
-                                    .get_mut(val)
-                                    .expect("")
-                                    .variants
-                                    .push(vc);
-                            }
-                        }
-                    }
-                    None => println!(
-                        "[err]: Failed trying to place variant {} in group {}.",
-                        &(*cloned.option_2_value.clone()),
-                        options.clone().expect("").option_2_name
-                    ),
-                }
-            }
-
-            if !cloned.option_3_value.is_empty() {
-                let vc: Variant = Variant {
-                    name: (*cloned.option_3_value.clone()).to_string(),
-                    images: vec![(*cloned.variant_image.clone()).to_string()],
-                    marginal_price: 0.00,
-                    variant_code: format!(
-                        "{}-{}",
-                        options.clone().expect("").option_3_name,
-                        &(*cloned.option_3_value.clone())
-                    ),
-                    order_history: vec![],
-                };
-
-                let existing_index = product
-                    .variant_groups
-                    .iter()
-                    .position(|x| x.category == options.clone().expect("").option_3_name);
-
-                match existing_index {
-                    Some(val) => {
-                        let existing_index_2 = product
-                            .variant_groups
-                            .get_mut(val)
-                            .expect("")
-                            .variants
-                            .iter()
-                            .position(|x| x.name == (*cloned.option_3_value.clone()));
-
-                        match existing_index_2 {
-                            Some(_) => {}
-                            None => {
-                                product
-                                    .variant_groups
-                                    .get_mut(val)
-                                    .expect("")
-                                    .variants
-                                    .push(vc);
-                            }
-                        }
-                    }
-                    None => println!(
-                        "[err]: Failed trying to place variant {} in group {}.",
-                        &(*cloned.option_3_value.clone()),
-                        options.expect("").option_3_name
-                    ),
-                }
-            }
-
-            product.variants.push(variant);
-            *line += 1;
-        }
-
-        Ok(product)
+        Err(ParseFailure::EOFException)
     }
 }
