@@ -1,12 +1,15 @@
-use crate::parser::ParseFailure;
+use crate::parser::{Customers, ParseFailure};
 use chrono::prelude::*;
 use csv::Reader;
 use open_stock::{
-    Address, ContactInformation, Customer, DiscountValue, Email, MobileNumber, Note, Product,
-    StockInformation, Transaction, Variant, VariantCategory, VariantInformation,
+    Address, ContactInformation, Customer, DiscountValue, Email, FulfillmentStatus, Location,
+    MobileNumber, Note, Order, Payment, PaymentMethod, PaymentProcessor, PickStatus, Price,
+    Product, ProductInstance, ProductPurchase, StockInformation, Transaction, TransactionCustomer,
+    Variant, VariantCategory, VariantInformation,
 };
 use serde::{Deserialize, Serialize};
 use std::{fs::File, ops::Deref, str::FromStr};
+use uuid::Uuid;
 
 use super::{Parsable, ParseType};
 
@@ -216,7 +219,7 @@ pub struct CustomerRecord {
     tax_exempt: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TransactionRecord {
     #[serde(rename = "Name")]
     order_name: String,
@@ -522,13 +525,171 @@ impl Parsable<CustomerRecord> for Customer {
     }
 }
 
+fn search_for_matching_customer(customer: String, customers: Vec<Customer>) -> Vec<Customer> {
+    customers
+        .iter()
+        .filter_map(|v| {
+            if v.contact.name.contains(&customer) {
+                Some((*v).clone())
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<Customer>>()
+}
+
+/// Note: This will only fill for non-disctinct instances.
+///
+/// i.e. instances with decimal quantities or unit based quantities (e.g. 3m^2)
+/// will have `n` instances, where `n` is the rounded metric quantity (e.g. 3).
+fn fill_instances(f_status: FulfillmentStatus, quantity: u32) -> Vec<ProductInstance> {
+    let mut instances = vec![];
+
+    for _ in 0..quantity {
+        instances.push(ProductInstance {
+            id: Uuid::new_v4().to_string(),
+            fulfillment_status: f_status.clone(),
+        })
+    }
+
+    instances
+}
+
 impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
         reader: &Vec<Result<TransactionRecord, csv::Error>>,
         line: &mut usize,
-        _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Transaction, ParseFailure> {
-        Err(ParseFailure::EOFException)
+        let init_line = line.clone();
+        let mut options: Option<Options> = None;
+
+        let (mut order, transaction): (Order, Transaction) = {
+            let val = match reader.get(*line) {
+                Some(v) => v,
+                None => return Err(ParseFailure::EOFException),
+            };
+
+            let cloned = (*val).as_ref().unwrap();
+            let cloned_clone = (*cloned).clone();
+            let customers: Vec<Customer> =
+                search_for_matching_customer(cloned_clone.order_name.clone(), (db.clone()).1);
+
+            let customer = customers[0].clone();
+
+            (
+                Order {
+                    id: Uuid::new_v4().to_string(),
+                    destination: Location {
+                        contact: customer.contact.clone(),
+                        // Shopify won't permit exporting
+                        // stores, so we have to do it manually.
+                        store_code: "000".to_string(),
+                        store_id: "000".to_string(),
+                    },
+                    origin: Location {
+                        // As we do not know what store is actually being utilized,
+                        // we must default the contact information to the customer.
+                        // This is NOT reccomended, nor endorsed but rather out of
+                        // neccesity due to shopify's lack of transparency.
+                        contact: customer.contact,
+                        // Shopify won't permit exporting
+                        // stores, so we have to do it manually.
+                        store_code: "000".to_string(),
+                        store_id: "000".to_string(),
+                    },
+                    products: vec![],
+                    status: open_stock::OrderStatusAssignment {
+                        status: open_stock::OrderStatus::Fulfilled(
+                            DateTime::from_str(cloned.fulfilled_at.as_str()).unwrap_or(Utc::now()),
+                        ),
+                        assigned_products: vec![],
+                        timestamp: DateTime::from_str(cloned.fulfilled_at.as_str())
+                            .unwrap_or(Utc::now()),
+                    },
+                    status_history: vec![],
+                    order_history: vec![],
+                    previous_failed_fulfillment_attempts: vec![],
+                    order_notes: vec![],
+                    reference: cloned.id.clone(),
+                    creation_date: DateTime::from_str(cloned.created_at.as_str())
+                        .unwrap_or(Utc::now()),
+                    discount: DiscountValue::Absolute(0),
+                    order_type: open_stock::OrderType::Shipment,
+                },
+                Transaction {
+                    id: cloned.id.clone(),
+                    customer: TransactionCustomer {
+                        customer_type: open_stock::CustomerType::Individual,
+                        customer_id: customer.id,
+                    },
+                    transaction_type: open_stock::sea_orm_active_enums::TransactionType::Out,
+                    products: vec![],
+                    order_total: cloned.total.clone().parse::<f32>().unwrap_or(0.0),
+                    payment: vec![Payment {
+                        id: uuid::Uuid::new_v4().to_string(),
+                        payment_method: PaymentMethod::Other(cloned.payment_method.clone()),
+                        fulfillment_date: DateTime::from_str(cloned.paid_at.as_str())
+                            .unwrap_or(Utc::now()),
+                        amount: Price {
+                            quantity: cloned.total.parse::<f32>().unwrap_or(0.0),
+                            currency: cloned.currency.clone(),
+                        },
+                        processing_fee: Price {
+                            quantity: cloned.total.parse::<f32>().unwrap_or(0.0),
+                            currency: cloned.currency.clone(),
+                        },
+                        status: open_stock::PaymentStatus::Complete(
+                            open_stock::Processable::Anonymous(String::from("shopify")),
+                        ),
+                        processor: PaymentProcessor::anonymous(String::from("shopify")),
+                        order_ids: vec![],
+                        delay_action: open_stock::PaymentAction::Complete,
+                        delay_duration: String::new(),
+                    }],
+                    order_date: DateTime::from_str(cloned.created_at.as_str())
+                        .unwrap_or(Utc::now()),
+                    order_notes: vec![],
+                    salesperson: String::new(),
+                    till: String::new(),
+                },
+            )
+        };
+
+        // Keep parsing till EOF reached.
+        while let Some(val) = reader.get(*line) {
+            let cloned = (*val).as_ref().unwrap();
+            let quantity = cloned.lineitem_quantity.parse::<f32>().unwrap_or(0.0);
+
+            order.products.push(ProductPurchase {
+                id: Uuid::new_v4().to_string(),
+                product_code: cloned.lineitem_sku.clone(),
+                product_name: cloned.lineitem_name.clone(),
+                product_sku: cloned.lineitem_sku.clone(),
+                product_cost: cloned.lineitem_price.parse::<f32>().unwrap_or(0.0),
+                discount: DiscountValue::Absolute(
+                    cloned.discount_amount.parse::<u32>().unwrap_or(0),
+                ),
+                product_variant_name: cloned.lineitem_name.clone(),
+                quantity,
+                tags: vec![cloned.tags.clone()],
+                transaction_type: open_stock::sea_orm_active_enums::TransactionType::Out,
+                instances: fill_instances(
+                    FulfillmentStatus {
+                        pick_status: PickStatus::Picked,
+                        pick_history: vec![],
+                        last_updated: DateTime::from_str(cloned.paid_at.as_str())
+                            .unwrap_or(Utc::now()),
+                        notes: vec![],
+                    },
+                    quantity as u32,
+                ),
+            });
+
+            *line += 1;
+        }
+
+        Ok(transaction)
     }
 }
 
@@ -538,7 +699,7 @@ impl Parsable<ProductRecord> for Product {
         line: &mut usize,
         _db: &(Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Product, ParseFailure> {
-        let init_line = line.clone();
+        let init_line = *line;
         let mut options: Option<Options> = None;
 
         // Shopify will not provide any information like this,
@@ -606,7 +767,7 @@ impl Parsable<ProductRecord> for Product {
                 company: (*cloned.vendor.clone()).to_string(),
                 variant_groups: vcs,
                 variants: vec![],
-                sku: generated_sku.clone(),
+                sku: generated_sku,
                 images: vec![(*cloned.image_url.clone()).to_string()],
                 tags: vec![(*cloned.tags.clone()).to_string()],
                 description: (*cloned.body.clone()).to_string(),
