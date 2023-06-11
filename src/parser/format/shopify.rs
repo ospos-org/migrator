@@ -561,7 +561,7 @@ impl Parsable<TransactionRecord> for Transaction {
         line: &mut usize,
         db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
     ) -> Result<Transaction, ParseFailure> {
-        let (mut order, transaction): (Order, Transaction) = {
+        let (mut order, mut transaction, reference): (Order, Transaction, String) = {
             let val = match reader.get(*line) {
                 Some(v) => v,
                 None => return Err(ParseFailure::EOFException),
@@ -638,7 +638,7 @@ impl Parsable<TransactionRecord> for Transaction {
                     order_history: vec![],
                     previous_failed_fulfillment_attempts: vec![],
                     order_notes: vec![],
-                    reference: cloned.id.clone(),
+                    reference: cloned.order_name.clone(),
                     creation_date: DateTime::from_str(cloned.created_at.as_str())
                         .unwrap_or(Utc::now()),
                     discount: DiscountValue::Absolute(0),
@@ -680,12 +680,17 @@ impl Parsable<TransactionRecord> for Transaction {
                     salesperson: String::new(),
                     till: String::new(),
                 },
+                cloned.order_name.clone(),
             )
         };
 
         // Keep parsing till EOF reached.
         while let Some(val) = reader.get(*line) {
             let cloned = (*val).as_ref().unwrap();
+            if cloned.order_name != reference {
+                break;
+            }
+
             let quantity = cloned.lineitem_quantity.parse::<f32>().unwrap_or(0.0);
 
             order.products.push(ProductPurchase {
@@ -716,6 +721,7 @@ impl Parsable<TransactionRecord> for Transaction {
             *line += 1;
         }
 
+        transaction.products = vec![order];
         Ok(transaction)
     }
 }

@@ -9,6 +9,7 @@ use crate::parser::read_file;
 
 use crate::parser::Classification;
 use clap::{self, Command};
+use odm::Transactions;
 use open_stock::{Customer, Product, Transaction};
 
 mod parser;
