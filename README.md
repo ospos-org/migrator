@@ -37,5 +37,7 @@ Where:
 We currently support:
 | Standard Name | Products | Customers | Transactions | Stores |
 |--------------|-----------|-----------|-----------|-----------|
-| Shopify  | ✅ | ❌ | ❌ | ❌ |
+| Shopify  | ✅ | ✅ | ✅ | 🔌 |
 | Lightspeed  | ❌ | ❌ | ❌ | ❌ |
+
+*🔌  Source lacks implementation*
