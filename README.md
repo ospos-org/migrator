@@ -15,13 +15,13 @@ Running `odm` will provide helpful information.
 
 To convert toward the open-retail standard, run the following command. 
 
-```
+```python
 odm parse --format <FORMAT> --type <TYPE> --input <FILE>
 ```
 
 or 
 
-```
+```python
 odm parse --solution <SOLUTION> --input <DIRECTORY>
 ```
 
