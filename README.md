@@ -38,6 +38,10 @@ We currently support:
 | Standard Name | Products | Customers | Transactions | Stores |
 |--------------|-----------|-----------|-----------|-----------|
 | Shopify  | ✅ | ✅ | ✅ | 🔌 |
-| Lightspeed  | ❌ | ❌ | ❌ | ❌ |
+| Lightspeed Retail  | ❌ | ❌ | ❌ | ❌ |
+| SquarePOS | 🚧 | 🚧 | 🚧 | 🚧 |
+| Retail Pro  | 🚧 | 🚧 | 🚧 | 🚧 |
+
+*🚧  Havent Investigated Yet*
 
 *🔌  Source lacks implementation*
