@@ -1797,6 +1797,7 @@ dependencies = [
  "open-stock",
  "phf",
  "serde",
+ "serde_json",
  "strsim 0.8.0",
  "strum",
  "strum_macros",

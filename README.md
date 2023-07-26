@@ -16,20 +16,12 @@ Running `odm` will provide helpful information.
 To convert toward the open-retail standard, run the following command. 
 
 ```python
-odm parse --format <FORMAT> --type <TYPE> --input <FILE>
+odm parse <DIRECTORY>
 ```
 
-or 
+The output of which will be `output.os`.
 
-```python
-odm parse --solution <SOLUTION> --input <DIRECTORY>
-```
-
-Where:
--  `<FILE>` represents the file path (or directory) to your `.csv` export(s) from your existing solution, this is often broken into multiple files, the one you wish to migrate can be specified by `--type`.
-- `<FORMAT>` represents the name of the existing solution. For supported standards, see [here](#supported-standards).
-- `<TYPE>` represents the type being converted, the following options are available: `Products`, `Customers`, `Transactions`, `Stores`.
-- `<SOLUTION>` represents the ability to convert all files of a particular standard, the following options are available: `Shopify`.
+`migrator` will automatically determine the origin of the files in the directory and apply the most appropriate parsing for it. This means, you may place all exported files in this directory and `migrator` will decode (to the best of its ability) each one, as long as it exists in the [currently supported standards list](#supported-standards).
 
 ### Supported Standards
 > Please note this is an active area of development, changes should occur quickly.
@@ -42,6 +34,6 @@ We currently support:
 | SquarePOS | 🚧 | 🚧 | 🚧 | 🚧 |
 | Retail Pro  | 🚧 | 🚧 | 🚧 | 🚧 |
 
-*🚧  Havent Investigated Yet*
+*🚧  Have yet to investigate file formatting*
 
-*🔌  Source lacks implementation*
+*🔌  Source lacks implementation/export*

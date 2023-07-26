@@ -73,6 +73,23 @@ fn main() {
                 }
             }
 
+            match serde_json::to_string(&db) {
+                Ok(string_value) => {
+                    // We're all good!
+                    match fs::write("output.os", string_value) {
+                        Ok(_) => {
+                            println!("Converted all data. Thank you for using OpenPOS!")
+                        }
+                        Err(error) => {
+                            println!("Failed to save data to file, {:?}", error)
+                        }
+                    }
+                }
+                Err(error) => {
+                    println!("Failed to stringify data, {:?}", error)
+                }
+            }
+
             // println!("[PRODUCTS]: \n{}", Products(db.0));
             // println!("[CUSTOMERS]: \n{}", Customers(db.1));
             // println!("[TRANSACTIONS]: \n{}", Transactions(db.2));
