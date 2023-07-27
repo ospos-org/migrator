@@ -1,7 +1,8 @@
 use crate::{
     parser::format, parser::lightrail::CustomerRecord as lCR,
-    parser::lightrail::ProductRecord as lPR, parser::lightrail::TransactionRecord as lTR,
-    parser::shopify::CustomerRecord as sCR, parser::shopify::ProductRecord as sPR,
+    parser::lightrail::ProductRecord as lPR, parser::lightrail::StoreRecord as lSR,
+    parser::lightrail::TransactionRecord as lTR, parser::shopify::CustomerRecord as sCR,
+    parser::shopify::ProductRecord as sPR, parser::shopify::StoreRecord as sSR,
     parser::shopify::TransactionRecord as sTR,
 };
 
@@ -9,7 +10,7 @@ use crate::parser::ParseType;
 
 use core::fmt;
 use csv::Reader;
-use open_stock::{Customer, Product, Transaction};
+use open_stock::{Customer, Product, Store, Transaction};
 use phf::{phf_map, Map};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
@@ -30,18 +31,27 @@ pub enum ParseFailure {
 }
 
 // type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
+type StoreParser = fn(
+    Reader<File>,
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+) -> Result<Vec<Store>, ParseFailure>;
 type ProductParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) -> Result<Vec<Product>, ParseFailure>;
 type CustomerParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) -> Result<Vec<Customer>, ParseFailure>;
 type TransactionParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) -> Result<Vec<Transaction>, ParseFailure>;
+
+pub static STORE_FORMATS: Map<&'static str, StoreParser> = phf_map! {
+    "shopify" => format::shopify::parse_type::<open_stock::Store, sSR>,
+    "lightrail" => format::lightrail::parse_type::<open_stock::Store, lSR>
+};
 
 pub static PRODUCT_FORMATS: phf::Map<&'static str, ProductParser> = phf_map! {
     "shopify" => format::shopify::parse_type::<open_stock::Product, sPR>,

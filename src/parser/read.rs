@@ -1,6 +1,6 @@
 use core::fmt;
 use csv::Reader;
-use open_stock::{Customer, Product, Transaction};
+use open_stock::{Customer, Product, Store, Transaction};
 use std::fs::File;
 
 pub struct Products(pub Vec<Product>);
@@ -33,15 +33,25 @@ impl fmt::Display for Transactions {
     }
 }
 
+pub struct Stores(pub Vec<Store>);
+
+impl fmt::Display for Stores {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.iter().fold(Ok(()), |result, store| {
+            result.and_then(|_| writeln!(f, "{:?}", store))
+        })
+    }
+}
+
 use crate::parser::ParseType;
 
-use super::{CUSTOMER_FORMATS, PRODUCT_FORMATS, TRANSACTION_FORMATS};
+use super::{CUSTOMER_FORMATS, PRODUCT_FORMATS, STORE_FORMATS, TRANSACTION_FORMATS};
 
 pub fn read_file(
     reader: Reader<File>,
     format: String,
     file_type: ParseType,
-    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) {
     match file_type {
         ParseType::Product => {
@@ -87,6 +97,24 @@ pub fn read_file(
 
                     match result {
                         Ok(mut trans) => (db).2.append(&mut trans),
+                        Err(e) => {
+                            // Handle error
+                            println!("[err]: Failed to parse row of input, reason: {:?}", e);
+                        }
+                    }
+                }
+                None => {
+                    panic!("No respective key exists, {}.", format)
+                }
+            }
+        }
+        ParseType::Store => {
+            match STORE_FORMATS.get(&format) {
+                Some(executor) => {
+                    let result = executor(reader, db);
+
+                    match result {
+                        Ok(mut store) => (db).3.append(&mut store),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);

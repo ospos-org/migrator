@@ -2,7 +2,7 @@ use crate::parser::ParseFailure;
 use chrono::prelude::*;
 use csv::Reader;
 use open_stock::{
-    Address, ContactInformation, Customer, Email, MobileNumber, Note, Product, Transaction,
+    Address, ContactInformation, Customer, Email, MobileNumber, Note, Product, Store, Transaction,
 };
 use serde::{Deserialize, Serialize};
 use std::{fs::File, str::FromStr};
@@ -11,12 +11,18 @@ use super::{Parsable, ParseType};
 
 pub fn match_self(parse_type: ParseType) -> String {
     let matchable = match parse_type {
-        ParseType::Product => "ZZZZZ",
+        ParseType::Store => "ZZZZ",
+        ParseType::Product => "ZZZZ",
         ParseType::Customer => "ZZZZ",
         ParseType::Transaction => "ZZZZ",
     };
 
     String::from_str(matchable).unwrap()
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StoreRecord {
+    // Empty
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -435,7 +441,7 @@ pub struct TransactionRecord {
 
 pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
     mut reader: Reader<File>,
-    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) -> Result<Vec<T>, ParseFailure> {
     let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
@@ -458,9 +464,9 @@ pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
 
 impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(
-        reader: &Vec<Result<CustomerRecord, csv::Error>>,
+        reader: &[Result<CustomerRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Customer, ParseFailure> {
         let customer: Customer = {
             let line_value = match reader.get(*line) {
@@ -516,9 +522,9 @@ impl Parsable<CustomerRecord> for Customer {
 
 impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
-        _reader: &Vec<Result<TransactionRecord, csv::Error>>,
+        _reader: &[Result<TransactionRecord, csv::Error>],
         _line: &mut usize,
-        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Transaction, ParseFailure> {
         Err(ParseFailure::EOFException)
     }
@@ -526,10 +532,23 @@ impl Parsable<TransactionRecord> for Transaction {
 
 impl Parsable<ProductRecord> for Product {
     fn parse_individual(
-        _reader: &Vec<Result<ProductRecord, csv::Error>>,
+        _reader: &[Result<ProductRecord, csv::Error>],
         _line: &mut usize,
-        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Product, ParseFailure> {
+        Err(ParseFailure::EOFException)
+    }
+}
+
+impl Parsable<StoreRecord> for Store {
+    fn parse_individual(
+        _reader: &[Result<StoreRecord, csv::Error>],
+        _line: &mut usize,
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    ) -> Result<Self, ParseFailure>
+    where
+        Self: Sized,
+    {
         Err(ParseFailure::EOFException)
     }
 }

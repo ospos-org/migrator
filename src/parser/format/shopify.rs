@@ -4,8 +4,8 @@ use csv::Reader;
 use open_stock::{
     Address, ContactInformation, Customer, DiscountValue, Email, FulfillmentStatus, Location,
     MobileNumber, Note, Order, Payment, PaymentMethod, PaymentProcessor, PickStatus, Price,
-    Product, ProductInstance, ProductPurchase, StockInformation, Transaction, TransactionCustomer,
-    Variant, VariantCategory, VariantInformation,
+    Product, ProductInstance, ProductPurchase, Quantity, Stock, StockInformation, Store,
+    Transaction, TransactionCustomer, Variant, VariantCategory, VariantInformation,
 };
 use serde::{Deserialize, Serialize};
 use std::{fs::File, ops::Deref, str::FromStr};
@@ -15,6 +15,7 @@ use super::{Parsable, ParseType};
 
 pub fn match_self(parse_type: ParseType) -> String {
     let matchable = match parse_type {
+        ParseType::Store => "",
         ParseType::Product => "Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Option3 Name,Option3 Value,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / AdWords Grouping,Google Shopping / AdWords Labels,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Included / New Zealand,Included / International,Price / International,Compare At Price / International,Status",
         ParseType::Customer => "First Name,Last Name,Email,Accepts Email Marketing,Company,Address1,Address2,City,Province,Province Code,Country,Country Code,Zip,Phone,Accepts SMS Marketing,Total Spent,Total Orders,Tags,Note,Tax Exempt",
         ParseType::Transaction => "Name,Email,Financial Status,Paid at,Fulfillment Status,Fulfilled at,Accepts Marketing,Currency,Subtotal,Shipping,Taxes,Total,Discount Code,Discount Amount,Shipping Method,Created at,Lineitem quantity,Lineitem name,Lineitem price,Lineitem compare at price,Lineitem sku,Lineitem requires shipping,Lineitem taxable,Lineitem fulfillment status,Billing Name,Billing Street,Billing Address1,Billing Address2,Billing Company,Billing City,Billing Zip,Billing Province,Billing Country,Billing Phone,Shipping Name,Shipping Street,Shipping Address1,Shipping Address2,Shipping Company,Shipping City,Shipping Zip,Shipping Province,Shipping Country,Shipping Phone,Notes,Note Attributes,Cancelled at,Payment Method,Payment Reference,Refunded Amount,Vendor,Outstanding Balance,Employee,Location,Device ID,Id,Tags,Risk Level,Source,Lineitem discount,Tax 1 Name,Tax 1 Value,Tax 2 Name,Tax 2 Value,Tax 3 Name,Tax 3 Value,Tax 4 Name,Tax 4 Value,Tax 5 Name,Tax 5 Value,Phone,Receipt Number,Duties,Billing Province Name,Shipping Province Name,Payment ID,Payment Terms Name,Next Payment Due At,Payment References"
@@ -58,6 +59,11 @@ struct Options {
     option_1_name: String,
     option_2_name: String,
     option_3_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StoreRecord {
+    // Empty
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -476,7 +482,7 @@ pub struct TransactionRecord {
 
 pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
     mut reader: Reader<File>,
-    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+    db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
 ) -> Result<Vec<T>, ParseFailure> {
     let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
@@ -499,9 +505,9 @@ pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
 
 impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(
-        reader: &Vec<Result<CustomerRecord, csv::Error>>,
+        reader: &[Result<CustomerRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Customer, ParseFailure> {
         let customer: Customer = {
             let line_value = match reader.get(*line) {
@@ -557,9 +563,9 @@ impl Parsable<CustomerRecord> for Customer {
 
 impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
-        reader: &Vec<Result<TransactionRecord, csv::Error>>,
+        reader: &[Result<TransactionRecord, csv::Error>],
         line: &mut usize,
-        db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Transaction, ParseFailure> {
         let (mut order, mut transaction, reference): (Order, Transaction, String) = {
             let val = match reader.get(*line) {
@@ -572,7 +578,7 @@ impl Parsable<TransactionRecord> for Transaction {
             let customers: Vec<Customer> =
                 search_for_matching_customer(cloned_clone.order_name.clone(), (db.clone()).1);
 
-            let customer: Customer = if customers.len() > 0 {
+            let customer: Customer = if !customers.is_empty() {
                 customers[0].clone()
             } else {
                 let c = Customer {
@@ -599,7 +605,7 @@ impl Parsable<TransactionRecord> for Transaction {
                     accepts_marketing: cloned.accepts_marketing == "yes",
                 };
 
-                (*db).1.push(c.clone());
+                (db).1.push(c.clone());
 
                 c
             };
@@ -728,9 +734,9 @@ impl Parsable<TransactionRecord> for Transaction {
 
 impl Parsable<ProductRecord> for Product {
     fn parse_individual(
-        reader: &Vec<Result<ProductRecord, csv::Error>>,
+        reader: &[Result<ProductRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>),
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Product, ParseFailure> {
         let init_line = *line;
 
@@ -842,7 +848,19 @@ impl Parsable<ProductRecord> for Product {
 
             let variant = VariantInformation {
                 name: actual_title,
-                stock: vec![], // Stock must be loaded from a stock CSV in shopify
+                stock: vec![Stock {
+                    store: Location {
+                        store_code: "001".to_string(),
+                        store_id: _db.3[0].id.clone(),
+                        contact: _db.3[0].contact.clone(),
+                    },
+                    quantity: Quantity {
+                        quantity_sellable: 0.0,
+                        quantity_unsellable: 0.0,
+                        quantity_on_order: 0.0,
+                        quantity_allocated: 0.0,
+                    },
+                }], // Stock must be loaded from a stock CSV in shopify
                 images: vec![(*cloned.variant_image.clone()).to_string()],
                 retail_price: price,
                 marginal_price: cloned.marginal_cost.parse::<f32>().unwrap_or(price),
@@ -1034,5 +1052,37 @@ impl Parsable<ProductRecord> for Product {
         }
 
         Ok(product)
+    }
+}
+
+impl Parsable<StoreRecord> for Store {
+    fn parse_individual(
+        _reader: &[Result<StoreRecord, csv::Error>],
+        _line: &mut usize,
+        _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    ) -> Result<Self, ParseFailure>
+    where
+        Self: Sized,
+    {
+        Ok(Store {
+            id: uuid::Uuid::new_v4().to_string(),
+            name: "Default Store".to_string(),
+            contact: ContactInformation {
+                name: "Default Store".to_string(),
+                mobile: MobileNumber::from("000 000 000".to_string()),
+                email: Email::from("contact@ospos.co".to_string()),
+                landline: "".to_string(),
+                address: Address {
+                    street: "1 Shopify Way".into(),
+                    street2: "Suburb".into(),
+                    city: "City".into(),
+                    country: "The Earth".into(),
+                    po_code: "0000".into(),
+                    lat: 0.0,
+                    lon: 0.0,
+                },
+            },
+            code: "001".to_string(),
+        })
     }
 }
