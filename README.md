@@ -37,3 +37,5 @@ We currently support:
 *🚧  Have yet to investigate file formatting*
 
 *🔌  Source lacks implementation/export*
+
+> Shopify does not provide an option to export "Stores". This includes stock information, so extra steps must be taken in order to achieve the conversion of this. This will be implemented in the future but for now is ignored.
