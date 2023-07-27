@@ -1,5 +1,3 @@
 /target
 
-examples/input_files/ihoney_customers_export.csv
-examples/input_files/ihoney_orders_export.csv
-examples/input_files/ihoney_products_export.csv
+examples/*

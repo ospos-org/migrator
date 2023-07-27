@@ -15,7 +15,7 @@ use super::{Parsable, ParseType};
 
 pub fn match_self(parse_type: ParseType) -> String {
     let matchable = match parse_type {
-        ParseType::Store => "",
+        ParseType::Store => "Store",
         ParseType::Product => "Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Option3 Name,Option3 Value,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / AdWords Grouping,Google Shopping / AdWords Labels,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Included / New Zealand,Included / International,Price / International,Compare At Price / International,Status",
         ParseType::Customer => "First Name,Last Name,Email,Accepts Email Marketing,Company,Address1,Address2,City,Province,Province Code,Country,Country Code,Zip,Phone,Accepts SMS Marketing,Total Spent,Total Orders,Tags,Note,Tax Exempt",
         ParseType::Transaction => "Name,Email,Financial Status,Paid at,Fulfillment Status,Fulfilled at,Accepts Marketing,Currency,Subtotal,Shipping,Taxes,Total,Discount Code,Discount Amount,Shipping Method,Created at,Lineitem quantity,Lineitem name,Lineitem price,Lineitem compare at price,Lineitem sku,Lineitem requires shipping,Lineitem taxable,Lineitem fulfillment status,Billing Name,Billing Street,Billing Address1,Billing Address2,Billing Company,Billing City,Billing Zip,Billing Province,Billing Country,Billing Phone,Shipping Name,Shipping Street,Shipping Address1,Shipping Address2,Shipping Company,Shipping City,Shipping Zip,Shipping Province,Shipping Country,Shipping Phone,Notes,Note Attributes,Cancelled at,Payment Method,Payment Reference,Refunded Amount,Vendor,Outstanding Balance,Employee,Location,Device ID,Id,Tags,Risk Level,Source,Lineitem discount,Tax 1 Name,Tax 1 Value,Tax 2 Name,Tax 2 Value,Tax 3 Name,Tax 3 Value,Tax 4 Name,Tax 4 Value,Tax 5 Name,Tax 5 Value,Phone,Receipt Number,Duties,Billing Province Name,Shipping Province Name,Payment ID,Payment Terms Name,Next Payment Due At,Payment References"
@@ -1058,31 +1058,37 @@ impl Parsable<ProductRecord> for Product {
 impl Parsable<StoreRecord> for Store {
     fn parse_individual(
         _reader: &[Result<StoreRecord, csv::Error>],
-        _line: &mut usize,
+        line: &mut usize,
         _db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized,
     {
-        Ok(Store {
-            id: uuid::Uuid::new_v4().to_string(),
-            name: "Default Store".to_string(),
-            contact: ContactInformation {
+        if (*line).eq(&0) {
+            *line += 1;
+
+            return Ok(Store {
+                id: uuid::Uuid::new_v4().to_string(),
                 name: "Default Store".to_string(),
-                mobile: MobileNumber::from("000 000 000".to_string()),
-                email: Email::from("contact@ospos.co".to_string()),
-                landline: "".to_string(),
-                address: Address {
-                    street: "1 Shopify Way".into(),
-                    street2: "Suburb".into(),
-                    city: "City".into(),
-                    country: "The Earth".into(),
-                    po_code: "0000".into(),
-                    lat: 0.0,
-                    lon: 0.0,
+                contact: ContactInformation {
+                    name: "Default Store".to_string(),
+                    mobile: MobileNumber::from("000 000 000".to_string()),
+                    email: Email::from("contact@ospos.co".to_string()),
+                    landline: "".to_string(),
+                    address: Address {
+                        street: "1 Shopify Way".into(),
+                        street2: "Suburb".into(),
+                        city: "City".into(),
+                        country: "The Earth".into(),
+                        po_code: "0000".into(),
+                        lat: 0.0,
+                        lon: 0.0,
+                    },
                 },
-            },
-            code: "001".to_string(),
-        })
+                code: "001".to_string(),
+            });
+        }
+
+        Err(ParseFailure::EOFException)
     }
 }
