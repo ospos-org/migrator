@@ -50,7 +50,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(mut pdt) => (*db).0.append(&mut pdt),
+                        Ok(mut pdt) => (db).0.append(&mut pdt),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);
@@ -68,7 +68,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(mut custom) => (*db).1.append(&mut custom),
+                        Ok(mut custom) => (db).1.append(&mut custom),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);
@@ -86,7 +86,7 @@ pub fn read_file(
                     let result = executor(reader, db);
 
                     match result {
-                        Ok(mut trans) => (*db).2.append(&mut trans),
+                        Ok(mut trans) => (db).2.append(&mut trans),
                         Err(e) => {
                             // Handle error
                             println!("[err]: Failed to parse row of input, reason: {:?}", e);

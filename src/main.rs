@@ -9,7 +9,6 @@ use crate::parser::read_file;
 
 use crate::parser::Classification;
 use clap::{self, Command};
-use odm::Transactions;
 use open_stock::{Customer, Product, Transaction};
 
 mod parser;
@@ -89,10 +88,6 @@ fn main() {
                     println!("Failed to stringify data, {:?}", error)
                 }
             }
-
-            // println!("[PRODUCTS]: \n{}", Products(db.0));
-            // println!("[CUSTOMERS]: \n{}", Customers(db.1));
-            // println!("[TRANSACTIONS]: \n{}", Transactions(db.2));
         }
         _ => unreachable!("This shouldn't happen, please file a bug report."),
     }
