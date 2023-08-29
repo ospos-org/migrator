@@ -9,7 +9,7 @@ use crate::parser::read_file;
 
 use crate::parser::Classification;
 use clap::{self, Command};
-use open_stock::{Customer, Product, Store, Transaction};
+use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 
 mod parser;
 fn main() {
@@ -57,8 +57,13 @@ fn main() {
                 }
             };
 
-            let mut db: (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>) =
-                (vec![], vec![], vec![], vec![]);
+            let mut db: (
+                Vec<Product>,
+                Vec<Customer>,
+                Vec<Transaction>,
+                Vec<Store>,
+                Vec<Kiosk>,
+            ) = (vec![], vec![], vec![], vec![], vec![]);
 
             for c in classifications {
                 println!("{}", c);

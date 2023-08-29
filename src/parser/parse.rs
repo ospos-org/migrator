@@ -1,7 +1,8 @@
 use crate::{
     parser::format, parser::lightrail::CustomerRecord as lCR,
-    parser::lightrail::ProductRecord as lPR, parser::lightrail::StoreRecord as lSR,
-    parser::lightrail::TransactionRecord as lTR, parser::shopify::CustomerRecord as sCR,
+    parser::lightrail::KioskRecord as lKR, parser::lightrail::ProductRecord as lPR,
+    parser::lightrail::StoreRecord as lSR, parser::lightrail::TransactionRecord as lTR,
+    parser::shopify::CustomerRecord as sCR, parser::shopify::KioskRecord as sKR,
     parser::shopify::ProductRecord as sPR, parser::shopify::StoreRecord as sSR,
     parser::shopify::TransactionRecord as sTR,
 };
@@ -10,7 +11,7 @@ use crate::parser::ParseType;
 
 use core::fmt;
 use csv::Reader;
-use open_stock::{Customer, Product, Store, Transaction};
+use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 use phf::{phf_map, Map};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
@@ -31,22 +32,61 @@ pub enum ParseFailure {
 }
 
 // type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
+type KioskParser = fn(
+    Reader<File>,
+    &mut (
+        Vec<Product>,
+        Vec<Customer>,
+        Vec<Transaction>,
+        Vec<Store>,
+        Vec<Kiosk>,
+    ),
+) -> Result<Vec<Kiosk>, ParseFailure>;
 type StoreParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    &mut (
+        Vec<Product>,
+        Vec<Customer>,
+        Vec<Transaction>,
+        Vec<Store>,
+        Vec<Kiosk>,
+    ),
 ) -> Result<Vec<Store>, ParseFailure>;
 type ProductParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    &mut (
+        Vec<Product>,
+        Vec<Customer>,
+        Vec<Transaction>,
+        Vec<Store>,
+        Vec<Kiosk>,
+    ),
 ) -> Result<Vec<Product>, ParseFailure>;
 type CustomerParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    &mut (
+        Vec<Product>,
+        Vec<Customer>,
+        Vec<Transaction>,
+        Vec<Store>,
+        Vec<Kiosk>,
+    ),
 ) -> Result<Vec<Customer>, ParseFailure>;
 type TransactionParser = fn(
     Reader<File>,
-    &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+    &mut (
+        Vec<Product>,
+        Vec<Customer>,
+        Vec<Transaction>,
+        Vec<Store>,
+        Vec<Kiosk>,
+    ),
 ) -> Result<Vec<Transaction>, ParseFailure>;
+
+pub static KIOSK_FORMATS: Map<&'static str, KioskParser> = phf_map! {
+    "shopify" => format::shopify::parse_type::<open_stock::Kiosk, sKR>,
+    "lightrail" => format::lightrail::parse_type::<open_stock::Kiosk, lKR>
+};
 
 pub static STORE_FORMATS: Map<&'static str, StoreParser> = phf_map! {
     "shopify" => format::shopify::parse_type::<open_stock::Store, sSR>,

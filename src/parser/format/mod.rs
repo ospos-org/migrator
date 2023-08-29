@@ -3,7 +3,7 @@
 pub mod lightrail;
 pub mod shopify;
 
-use open_stock::{Customer, Product, Store, Transaction};
+use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 
 pub use lightrail::*;
 pub use shopify::*;
@@ -21,16 +21,23 @@ use strum_macros::{Display, EnumIter};
 #[derive(Debug, EnumIter, Copy, Clone, Display)]
 pub enum ParseType {
     Store = 0,
-    Product = 1,
-    Customer = 2,
-    Transaction = 3,
+    Kiosk = 1,
+    Product = 2,
+    Customer = 3,
+    Transaction = 4,
 }
 
 pub trait Parsable<R> {
     fn parse_individual(
         reader: &[Result<R, csv::Error>],
         line: &mut usize,
-        db: &mut (Vec<Product>, Vec<Customer>, Vec<Transaction>, Vec<Store>),
+        db: &mut (
+            Vec<Product>,
+            Vec<Customer>,
+            Vec<Transaction>,
+            Vec<Store>,
+            Vec<Kiosk>,
+        ),
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized;
