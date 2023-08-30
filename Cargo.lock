@@ -330,7 +330,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "odm"
+name = "odm-migration-utility"
 version = "0.0.1"
 dependencies = [
  "chrono",

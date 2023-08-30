@@ -1,4 +1,4 @@
-use odm::{convert_from_directory, InlineDatabase};
+use odm_migration_utility::{convert_from_directory, InlineDatabase};
 
 use clap::{self, Command};
 
