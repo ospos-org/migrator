@@ -68,6 +68,30 @@ pub fn convert_from_directory(folder: String) {
     }
 }
 
+#[wasm_bindgen]
+/// 🥬 Leaks the viewable [wasm] directory for debugging purposes.
+pub fn leek_directory(dir: String) -> String {
+    let path = Path::new(dir.as_str());
+
+    let classifications = match traverse_directories(path, &classify_type) {
+        Ok(mut v) => {
+            v.sort_by(|a, b| (a.variant as u32).cmp(&(b.variant as u32)));
+            v
+        }
+        Err(err) => {
+            panic!(
+                "[err]: Execution error in parsing files in provided directory, {}",
+                err
+            );
+        }
+    };
+
+    classifications
+        .into_iter()
+        .map(|classification| classification.to_string())
+        .collect()
+}
+
 fn traverse_directories(
     dir: &Path,
     cb: &dyn Fn(&DirEntry) -> Classification,
