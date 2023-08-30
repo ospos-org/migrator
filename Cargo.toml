@@ -10,7 +10,7 @@ license = "MIT"
 
 [dependencies]
 clap = { version = "4.2.1", features = ["cargo"] }
-open-stock = { version = "0.1.10", features = ["types"] }
+open-stock = { version = "0.1.15", features = ["types"] }
 csv = "1.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "*"
@@ -22,5 +22,5 @@ strum_macros = "0.24"
 strsim = "0.8.0"
 getrandom = { version = "0.2", features = ["js"] }
 
-# [lib]
-# crate-type = ["cdylib", "rlib"]
+[lib]
+crate-type = ["cdylib", "rlib"]

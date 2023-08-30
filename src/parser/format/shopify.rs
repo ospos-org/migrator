@@ -682,7 +682,7 @@ impl Parsable<TransactionRecord> for Transaction {
                         customer_id: customer.id,
                     },
                     kiosk: db.4[0].id.clone(),
-                    transaction_type: open_stock::sea_orm_active_enums::TransactionType::Out,
+                    transaction_type: open_stock::TransactionType::Out,
                     products: vec![],
                     order_total: cloned.total.clone().parse::<f32>().unwrap_or(0.0),
                     payment: vec![Payment {
@@ -736,7 +736,7 @@ impl Parsable<TransactionRecord> for Transaction {
                 product_variant_name: cloned.lineitem_name.clone(),
                 quantity,
                 tags: vec![cloned.tags.clone()],
-                transaction_type: open_stock::sea_orm_active_enums::TransactionType::Out,
+                transaction_type: open_stock::TransactionType::Out,
                 instances: fill_instances(
                     FulfillmentStatus {
                         pick_status: PickStatus::Picked,
