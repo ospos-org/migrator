@@ -3,12 +3,10 @@
 pub mod lightrail;
 pub mod shopify;
 
-use open_stock::{Customer, Kiosk, Product, Store, Transaction};
-
 pub use lightrail::*;
 pub use shopify::*;
 
-use crate::parser::ParseFailure;
+use crate::{parser::ParseFailure, InlineDatabase};
 
 use strum_macros::{Display, EnumIter};
 
@@ -31,13 +29,7 @@ pub trait Parsable<R> {
     fn parse_individual(
         reader: &[Result<R, csv::Error>],
         line: &mut usize,
-        db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        db: &mut InlineDatabase,
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized;

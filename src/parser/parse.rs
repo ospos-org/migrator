@@ -1,3 +1,4 @@
+use crate::InlineDatabase;
 use crate::{
     parser::format, parser::lightrail::CustomerRecord as lCR,
     parser::lightrail::KioskRecord as lKR, parser::lightrail::ProductRecord as lPR,
@@ -32,56 +33,12 @@ pub enum ParseFailure {
 }
 
 // type Parser<T> = fn(Reader<File>) -> Result<Vec<T>, ParseFailure>;
-type KioskParser = fn(
-    Reader<File>,
-    &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
-) -> Result<Vec<Kiosk>, ParseFailure>;
-type StoreParser = fn(
-    Reader<File>,
-    &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
-) -> Result<Vec<Store>, ParseFailure>;
-type ProductParser = fn(
-    Reader<File>,
-    &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
-) -> Result<Vec<Product>, ParseFailure>;
-type CustomerParser = fn(
-    Reader<File>,
-    &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
-) -> Result<Vec<Customer>, ParseFailure>;
-type TransactionParser = fn(
-    Reader<File>,
-    &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
-) -> Result<Vec<Transaction>, ParseFailure>;
+type KioskParser = fn(Reader<File>, &mut InlineDatabase) -> Result<Vec<Kiosk>, ParseFailure>;
+type StoreParser = fn(Reader<File>, &mut InlineDatabase) -> Result<Vec<Store>, ParseFailure>;
+type ProductParser = fn(Reader<File>, &mut InlineDatabase) -> Result<Vec<Product>, ParseFailure>;
+type CustomerParser = fn(Reader<File>, &mut InlineDatabase) -> Result<Vec<Customer>, ParseFailure>;
+type TransactionParser =
+    fn(Reader<File>, &mut InlineDatabase) -> Result<Vec<Transaction>, ParseFailure>;
 
 pub static KIOSK_FORMATS: Map<&'static str, KioskParser> = phf_map! {
     "shopify" => format::shopify::parse_type::<open_stock::Kiosk, sKR>,

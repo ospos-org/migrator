@@ -1,6 +1,6 @@
 use core::fmt;
 use csv::Reader;
-use open_stock::{Customer, Kiosk, Product, Store, Transaction};
+use open_stock::{Customer, Product, Store, Transaction};
 use std::fs::File;
 
 pub struct Products(pub Vec<Product>);
@@ -43,7 +43,7 @@ impl fmt::Display for Stores {
     }
 }
 
-use crate::parser::ParseType;
+use crate::{parser::ParseType, InlineDatabase};
 
 use super::{CUSTOMER_FORMATS, KIOSK_FORMATS, PRODUCT_FORMATS, STORE_FORMATS, TRANSACTION_FORMATS};
 
@@ -51,13 +51,7 @@ pub fn read_file(
     reader: Reader<File>,
     format: String,
     file_type: ParseType,
-    db: &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
+    db: &mut InlineDatabase,
 ) {
     match file_type {
         ParseType::Product => {

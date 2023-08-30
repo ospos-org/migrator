@@ -1,4 +1,4 @@
-use crate::parser::ParseFailure;
+use crate::{parser::ParseFailure, InlineDatabase};
 use chrono::prelude::*;
 use csv::Reader;
 use open_stock::{
@@ -489,13 +489,7 @@ pub struct TransactionRecord {
 
 pub fn parse_type<T: Parsable<R>, R: for<'de> serde::Deserialize<'de>>(
     mut reader: Reader<File>,
-    db: &mut (
-        Vec<Product>,
-        Vec<Customer>,
-        Vec<Transaction>,
-        Vec<Store>,
-        Vec<Kiosk>,
-    ),
+    db: &mut InlineDatabase,
 ) -> Result<Vec<T>, ParseFailure> {
     let collected: Vec<Result<R, csv::Error>> = reader.deserialize().collect();
     let mut iterator: usize = 0;
@@ -520,13 +514,7 @@ impl Parsable<CustomerRecord> for Customer {
     fn parse_individual(
         reader: &[Result<CustomerRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        _db: &mut InlineDatabase,
     ) -> Result<Customer, ParseFailure> {
         let customer: Customer = {
             let line_value = match reader.get(*line) {
@@ -584,13 +572,7 @@ impl Parsable<TransactionRecord> for Transaction {
     fn parse_individual(
         reader: &[Result<TransactionRecord, csv::Error>],
         line: &mut usize,
-        db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        db: &mut InlineDatabase,
     ) -> Result<Transaction, ParseFailure> {
         let (mut order, mut transaction, reference): (Order, Transaction, String) = {
             let val = match reader.get(*line) {
@@ -761,13 +743,7 @@ impl Parsable<ProductRecord> for Product {
     fn parse_individual(
         reader: &[Result<ProductRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        _db: &mut InlineDatabase,
     ) -> Result<Product, ParseFailure> {
         let init_line = *line;
 
@@ -1090,13 +1066,7 @@ impl Parsable<KioskRecord> for Kiosk {
     fn parse_individual(
         _reader: &[Result<KioskRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        _db: &mut InlineDatabase,
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized,
@@ -1124,13 +1094,7 @@ impl Parsable<StoreRecord> for Store {
     fn parse_individual(
         _reader: &[Result<StoreRecord, csv::Error>],
         line: &mut usize,
-        _db: &mut (
-            Vec<Product>,
-            Vec<Customer>,
-            Vec<Transaction>,
-            Vec<Store>,
-            Vec<Kiosk>,
-        ),
+        _db: &mut InlineDatabase,
     ) -> Result<Self, ParseFailure>
     where
         Self: Sized,
