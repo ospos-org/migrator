@@ -345,6 +345,7 @@ dependencies = [
  "strum",
  "strum_macros",
  "uuid",
+ "vfs",
  "wasm-bindgen",
 ]
 
@@ -630,6 +631,12 @@ dependencies = [
  "rand",
  "serde",
 ]
+
+[[package]]
+name = "vfs"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ded573c92d7b32013bdab82676be59f56106895e837504568f32804980ec7868"
 
 [[package]]
 name = "wasi"

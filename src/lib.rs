@@ -5,6 +5,7 @@ use std::{
     path::Path,
 };
 
+use vfs::MemoryFS;
 use wasm_bindgen::prelude::*;
 
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
@@ -64,6 +65,20 @@ pub fn convert_from_directory(folder: String) {
         }
         Err(error) => {
             println!("Failed to stringify data, {:?}", error)
+        }
+    }
+}
+
+#[wasm_bindgen]
+/// 🪵 Lays the [wasm] file log into a wasmfs.
+pub fn lay_file(file_id: String, file_content: String) -> String {
+    let raw_path = format!("/{}", file_id);
+    let path = Path::new(raw_path.as_str());
+
+    match fs::write(path, file_content) {
+        Ok(_) => format!("Written File."),
+        Err(reason) => {
+            format!("Failed to write file. Reason: {}", reason.to_string())
         }
     }
 }
