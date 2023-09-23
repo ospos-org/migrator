@@ -346,7 +346,6 @@ dependencies = [
  "strum_macros",
  "uuid",
  "vfs",
- "wasm-bindgen",
 ]
 
 [[package]]
