@@ -1,6 +1,5 @@
 pub mod parser;
 use std::{
-    ffi::{c_char, CStr, CString},
     fs::{self, DirEntry},
     io,
     path::Path,
@@ -8,6 +7,7 @@ use std::{
 
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 pub use parser::*;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 pub type InlineDatabase = (
     Vec<Product>,
@@ -17,6 +17,7 @@ pub type InlineDatabase = (
     Vec<Kiosk>,
 );
 
+#[wasm_bindgen]
 pub fn convert_from_directory(input: String) {
     let path = Path::new(&input);
 
@@ -66,92 +67,21 @@ pub fn convert_from_directory(input: String) {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn c_convert_from_directory(input: *mut c_char) {
-    let pth = unsafe { CStr::from_ptr(input) }
-        .to_string_lossy()
-        .into_owned();
-    let path = Path::new(&pth);
-
-    let classifications = match traverse_directories(path, &classify_type) {
-        Ok(mut v) => {
-            v.sort_by(|a, b| (a.variant as u32).cmp(&(b.variant as u32)));
-            v
-        }
-        Err(err) => {
-            panic!(
-                "[err]: Execution error in parsing files in provided directory, {}",
-                err
-            );
-        }
-    };
-
-    let mut db: InlineDatabase = (vec![], vec![], vec![], vec![], vec![]);
-
-    for c in classifications {
-        println!("{}", c);
-
-        match csv::Reader::from_path(c.path) {
-            Ok(rdr) => {
-                read_file(rdr, c.branding, c.variant, &mut db);
-            }
-            Err(error) => {
-                println!("{:?}", error)
-            }
-        }
-    }
-
-    match serde_json::to_string(&db) {
-        Ok(string_value) => {
-            // We're all good!
-            match fs::write("output.os", string_value) {
-                Ok(_) => {
-                    println!("Converted all data. Thank you for using OpenPOS!")
-                }
-                Err(error) => {
-                    println!("Failed to save data to file, {:?}", error)
-                }
-            }
-        }
-        Err(error) => {
-            println!("Failed to stringify data, {:?}", error)
-        }
-    }
-}
-
 /// 🪵 Lays the [wasm] file log into a wasmfs.
-#[no_mangle]
-pub extern "C" fn lay_file(
-    file_id_str: *const c_char,
-    file_content_str: *const c_char,
-) -> *mut c_char {
-    let file_id = unsafe { CStr::from_ptr(file_id_str) }
-        .to_string_lossy()
-        .into_owned();
-    let file_content = unsafe { CStr::from_ptr(file_content_str) }
-        .to_string_lossy()
-        .into_owned();
-
+#[wasm_bindgen]
+pub fn lay_file(file_id: String, file_content: String) -> String {
     let raw_path = format!("/{}", file_id);
     let path = Path::new(raw_path.as_str());
 
     match fs::write(path, file_content) {
-        Ok(_) => CString::new("Written File.")
-            .expect("CString Conversion Failure")
-            .into_raw(),
-        Err(reason) => CString::new(format!("Failed to write file. Reason: {}", reason))
-            .expect("CString Conversion Failure")
-            .into_raw(),
+        Ok(_) => "Written File.".to_string(),
+        Err(reason) => format!("Failed to write file. Reason: {}", reason),
     }
 }
 
 /// 🥬 Leaks the viewable [wasm] directory for debugging purposes.
-#[no_mangle]
-pub extern "C" fn leek_directory(dir_str: *const c_char) -> *mut c_char {
-    let dir = unsafe { CStr::from_ptr(dir_str) }
-        .to_string_lossy()
-        .into_owned();
-
+#[wasm_bindgen]
+pub fn leek_directory(dir: String) -> String {
     let path = Path::new(dir.as_str());
 
     let classifications = match traverse_directories(path, &classify_type) {
@@ -167,14 +97,10 @@ pub extern "C" fn leek_directory(dir_str: *const c_char) -> *mut c_char {
         }
     };
 
-    let value: String = classifications
+    classifications
         .into_iter()
         .map(|classification| classification.to_string())
-        .collect();
-
-    CString::new(value)
-        .expect("CString Conversion Failure")
-        .into_raw()
+        .collect()
 }
 
 fn traverse_directories(

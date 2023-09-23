@@ -663,7 +663,7 @@ impl Parsable<TransactionRecord> for Transaction {
                         customer_type: open_stock::CustomerType::Individual,
                         customer_id: customer.id,
                     },
-                    kiosk: db.4[0].id.clone(),
+                    kiosk: db.4.get(0).map_or("".to_owned(), |kiosk| kiosk.id.clone()),
                     transaction_type: open_stock::TransactionType::Out,
                     products: vec![],
                     order_total: cloned.total.clone().parse::<f32>().unwrap_or(0.0),
