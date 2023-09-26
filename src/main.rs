@@ -1,10 +1,15 @@
-use odm_migration_utility::{convert_from_directory, InlineDatabase};
+#[cfg(feature = "cli")]
+use odm_migration_utility::convert_from_directory;
 
+use odm_migration_utility::InlineDatabase;
+
+#[cfg(feature = "cli")]
 use clap::{self, Command};
 
 mod parser;
 
 fn main() {
+    #[cfg(feature = "cli")]
     let cmd = clap::Command::new("odm")
         .about("OpenRetail Data Format Migrator")
         .version("0.0.1")
@@ -26,6 +31,7 @@ fn main() {
         )
         .get_matches();
 
+    #[cfg(feature = "cli")]
     match cmd.subcommand_name() {
         Some("parse") => {
             let folder: String = cmd
