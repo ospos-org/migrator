@@ -4,6 +4,8 @@ use std::{
     io,
     path::Path,
 };
+use std::fs::OpenOptions;
+use std::io::Write;
 
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 pub use parser::*;
@@ -106,7 +108,13 @@ pub fn convert_from_directory(input: String) {
         Ok(string_value) => {
             let to_write_path = path.join("output.os");
             // We're all good!
-            match fs::write(to_write_path.clone(), string_value) {
+            let mut file = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(to_write_path.clone())
+                .unwrap();
+
+            match file.write(string_value.as_bytes()) {
                 Ok(_) => {
                     println!("Converted all data. Thank you for using OpenPOS!")
                 }
