@@ -89,6 +89,8 @@ pub fn convert_from_directory(input: String) {
         }
     };
 
+    println!("Yielded Following Classifications: {:?}", classifications);
+
     let mut db: InlineDatabase = (vec![], vec![], vec![], vec![], vec![]);
 
     for c in classifications {
@@ -111,16 +113,21 @@ pub fn convert_from_directory(input: String) {
             let mut file = OpenOptions::new()
                 .create_new(true)
                 .write(true)
-                .open(to_write_path.clone())
-                .unwrap();
+                .open(to_write_path.clone());
 
-            match file.write(string_value.as_bytes()) {
-                Ok(_) => {
-                    println!("Converted all data. Thank you for using OpenPOS!")
+            match file {
+                Ok(mut f) => {
+                    match f.write(string_value.as_bytes()) {
+                        Ok(_) => println!("Converted all data. Thank you for using OpenPOS!"),
+                        Err(error) => println!(
+                            "Failed to write data to file. Path given was: {} {:?}",
+                            to_write_path.to_str().unwrap_or_default(), error
+                        )
+                    }
                 }
                 Err(error) => {
                     println!(
-                        "Failed to save data to file. Path given was: {} {:?}",
+                        "Failed to create data file. Path given was: {} {:?}",
                         to_write_path.to_str().unwrap_or_default(), error
                     )
                 }
