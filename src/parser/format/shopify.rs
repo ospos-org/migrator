@@ -630,8 +630,8 @@ impl Parsable<TransactionRecord> for Transaction {
                     origin: Location {
                         // As we do not know what store is actually being utilized,
                         // we must default the contact information to the customer.
-                        // This is NOT reccomended, nor endorsed but rather out of
-                        // neccesity due to shopify's lack of transparency.
+                        // This is NOT recommended, nor endorsed but rather out of
+                        // necessity due to shopify's lack of transparency.
                         contact: customer.contact,
                         // Shopify won't permit exporting
                         // stores, so we have to do it manually.
@@ -858,7 +858,7 @@ impl Parsable<ProductRecord> for Product {
                 stock: vec![Stock {
                     store: Location {
                         store_code: "001".to_string(),
-                        store_id: _db.3[0].id.clone(),
+                        store_id: _db.3.get(0).map_or("".to_owned(), |store| store.id.clone()),
                         contact: _db.3[0].contact.clone(),
                     },
                     quantity: Quantity {
@@ -1077,7 +1077,8 @@ impl Parsable<KioskRecord> for Kiosk {
             return Ok(Kiosk {
                 id: uuid::Uuid::new_v4().to_string(),
                 name: "Default Kiosk".to_string(),
-                store_id: (&_db).3[0].id.clone(),
+                store_id: (&_db).3.get(0).map_or("".to_owned(),
+                                                 |store| store.id.clone()),
                 preferences: KioskPreferences {
                     printer_id: "".to_string(),
                 },
