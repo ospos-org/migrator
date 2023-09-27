@@ -118,7 +118,16 @@ pub fn convert_from_directory(input: String) {
             match file {
                 Ok(mut f) => {
                     match f.write(string_value.as_bytes()) {
-                        Ok(_) => println!("Converted all data. Thank you for using OpenPOS!"),
+                        Ok(written) =>{
+                            if let Err(err) = f.flush() {
+                                println!("Encountered error flushing file, {}", err);
+                            } else {
+                                println!(
+                                    "Wrote {} bytes and Converted all data. Thank you for using OpenPOS!",
+                                    written
+                                )
+                            }
+                        },
                         Err(error) => println!(
                             "Failed to write data to file. Path given was: {} {:?}",
                             to_write_path.to_str().unwrap_or_default(), error
