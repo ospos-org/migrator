@@ -72,6 +72,7 @@ pub fn convert_from_directory(input: String) {
 #[cfg(not(feature = "wasm"))]
 pub fn convert_from_directory(input: String) {
     let path = Path::new(&input);
+    println!("Traversing {}", path.clone().to_str().unwrap_or_default());
 
     let classifications = match traverse_directories(path, &classify_type) {
         Ok(mut v) => {
@@ -103,13 +104,17 @@ pub fn convert_from_directory(input: String) {
 
     match serde_json::to_string(&db) {
         Ok(string_value) => {
+            let to_write_path = path.join("output.os");
             // We're all good!
-            match fs::write(path.join("output.os"), string_value) {
+            match fs::write(to_write_path.clone(), string_value) {
                 Ok(_) => {
                     println!("Converted all data. Thank you for using OpenPOS!")
                 }
                 Err(error) => {
-                    println!("Failed to save data to file, {:?}", error)
+                    println!(
+                        "Failed to save data to file. Path given was: {} {:?}",
+                        to_write_path.to_str().unwrap_or_default(), error
+                    )
                 }
             }
         }
