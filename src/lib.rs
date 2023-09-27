@@ -104,7 +104,10 @@ pub fn convert_from_directory(input: String) {
     match serde_json::to_string(&db) {
         Ok(string_value) => {
             // We're all good!
-            match fs::write("output.os", string_value) {
+            match fs::write(
+                format!("{}/output.os", path.to_str().map_or("", |f| f)),
+                string_value,
+            ) {
                 Ok(_) => {
                     println!("Converted all data. Thank you for using OpenPOS!")
                 }
