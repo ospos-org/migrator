@@ -4,7 +4,7 @@ use std::{
     io,
     path::Path,
 };
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::io::Write;
 
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
@@ -109,22 +109,17 @@ pub fn convert_from_directory(input: String) {
     match serde_json::to_string(&db) {
         Ok(string_value) => {
             let to_write_path = path.join("output.os");
-            // We're all good!
-            let mut file = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(to_write_path.clone());
 
-            match file {
+            match File::create(to_write_path.clone()) {
                 Ok(mut f) => {
-                    match f.write(string_value.as_bytes()) {
-                        Ok(written) =>{
+                    match f.write_all(string_value.as_bytes()) {
+                        Ok(_) =>{
                             if let Err(err) = f.flush() {
                                 println!("Encountered error flushing file, {}", err);
                             } else {
                                 println!(
-                                    "Wrote {} bytes and Converted all data. Thank you for using OpenPOS!",
-                                    written
+                                    "Wrote some bytes to {} and Converted all data. Thank you for using OpenPOS!",
+                                    to_write_path.to_str().unwrap(),
                                 )
                             }
                         },
