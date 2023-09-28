@@ -72,7 +72,7 @@ pub fn convert_from_directory(input: String) {
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn convert_from_directory(input: String) {
+pub fn convert_from_directory(input: String) -> String {
     let path = Path::new(&input);
     println!("Traversing {}", path.clone().to_str().unwrap_or_default());
 
@@ -135,10 +135,14 @@ pub fn convert_from_directory(input: String) {
                         to_write_path.to_str().unwrap_or_default(), error
                     )
                 }
-            }
+            };
+
+            string_value
         }
         Err(error) => {
-            println!("Failed to stringify data, {:?}", error)
+            println!("Failed to stringify data, {:?}", error);
+
+            format!("Failed Convert.")
         }
     }
 }
