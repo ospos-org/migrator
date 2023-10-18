@@ -526,7 +526,7 @@ impl Parsable<CustomerRecord> for Customer {
             let name = format!("{} {}", cloned.first_name, cloned.last_name);
 
             Customer {
-                id: uuid::Uuid::new_v4().to_string(),
+                id: Uuid::new_v4().to_string(),
                 name: name.clone(),
                 contact: ContactInformation {
                     name,
@@ -559,6 +559,8 @@ impl Parsable<CustomerRecord> for Customer {
                     "".to_string()
                 },
                 accepts_marketing: cloned.accepts_marketing == "yes",
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
             }
         };
 
@@ -610,6 +612,8 @@ impl Parsable<TransactionRecord> for Transaction {
                     balance: 0.0,
                     special_pricing: String::new(),
                     accepts_marketing: cloned.accepts_marketing == "yes",
+                    created_at: Utc::now(),
+                    updated_at: Utc::now(),
                 };
 
                 (db).1.push(c.clone());
@@ -692,6 +696,9 @@ impl Parsable<TransactionRecord> for Transaction {
                         .unwrap_or(Utc::now()),
                     order_notes: vec![],
                     salesperson: String::new(),
+                    created_at: DateTime::from_str(cloned.created_at.as_str())
+                        .unwrap_or(Utc::now()),
+                    updated_at: Utc::now(),
                 },
                 cloned.order_name.clone(),
             )
@@ -816,6 +823,8 @@ impl Parsable<ProductRecord> for Product {
                     identification: pdt_ident.clone(),
                     description_long: (*cloned.body.clone()).to_string(),
                     visible: open_stock::ProductVisibility::ShowWhenInStock,
+                    created_at: Utc::now(),
+                    updated_at: Utc::now(),
                 },
                 Some(Options {
                     option_1_name: (*cloned.option_1_name.clone()).to_string(),
@@ -1122,6 +1131,8 @@ impl Parsable<StoreRecord> for Store {
                     },
                 },
                 code: "001".to_string(),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
             });
         }
 

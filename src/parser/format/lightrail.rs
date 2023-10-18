@@ -518,6 +518,8 @@ impl Parsable<CustomerRecord> for Customer {
                     "".to_string()
                 },
                 accepts_marketing: cloned.accepts_marketing == "yes",
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
             }
         };
 
