@@ -609,7 +609,7 @@ impl Parsable<TransactionRecord> for Transaction {
                         },
                     },
                     customer_notes: vec![],
-                    balance: 0.0,
+                    balance: 0,
                     special_pricing: String::new(),
                     accepts_marketing: cloned.accepts_marketing == "yes",
                     created_at: Utc::now(),
