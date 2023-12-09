@@ -511,7 +511,7 @@ impl Parsable<CustomerRecord> for Customer {
                         timestamp: Utc::now(),
                     }]
                 },
-                balance: 0.0,
+                balance: 0,
                 special_pricing: if cloned.tax_exempt == "yes" {
                     "TAX-EXEMPT".to_string()
                 } else {
