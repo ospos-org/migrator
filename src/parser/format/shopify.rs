@@ -862,21 +862,31 @@ impl Parsable<ProductRecord> for Product {
                 Err(err) => return Err(ParseFailure::FormatFailure(err.to_string())),
             };
 
+            let stock = match _db.3.get(0) {
+                Some(store) => {
+                    vec![Stock {
+                        store: Location {
+                            store_code: "001".to_string(),
+                            store_id: store.id.clone(),
+                            contact: store.contact.clone(),
+                        },
+                        quantity: Quantity {
+                            quantity_sellable: 0.0,
+                            quantity_unsellable: 0.0,
+                            quantity_on_order: 0.0,
+                            quantity_allocated: 0.0,
+                        },
+                    }]
+                },
+                None => {
+                    println!("Could not load any store information, no stores found.");
+                    vec![]
+                }
+            };
+
             let variant = VariantInformation {
                 name: actual_title,
-                stock: vec![Stock {
-                    store: Location {
-                        store_code: "001".to_string(),
-                        store_id: _db.3.get(0).map_or("".to_owned(), |store| store.id.clone()),
-                        contact: _db.3[0].contact.clone(),
-                    },
-                    quantity: Quantity {
-                        quantity_sellable: 0.0,
-                        quantity_unsellable: 0.0,
-                        quantity_on_order: 0.0,
-                        quantity_allocated: 0.0,
-                    },
-                }], // Stock must be loaded from a stock CSV in shopify
+                stock, // Stock must be loaded from a stock CSV in shopify
                 images: vec![(*cloned.variant_image.clone()).to_string()],
                 retail_price: price,
                 marginal_price: cloned.marginal_cost.parse::<f32>().unwrap_or(price),
