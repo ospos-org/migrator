@@ -12,6 +12,7 @@ use core::fmt;
 use csv::Reader;
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 use phf::{phf_map, Map};
+use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::{
@@ -67,7 +68,7 @@ pub static HEADER_FORMAT_MATCHERS: phf::Map<&'static str, fn(ParseType) -> Strin
     "lightrail" => format::lightrail::match_self
 };
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Classification {
     pub score: usize,
     pub path: PathBuf,

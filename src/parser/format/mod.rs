@@ -4,6 +4,7 @@ pub mod lightrail;
 pub mod shopify;
 
 pub use lightrail::*;
+use serde::{Deserialize, Serialize};
 pub use shopify::*;
 
 use crate::{parser::ParseFailure, InlineDatabase};
@@ -16,7 +17,7 @@ use strum_macros::{Display, EnumIter};
 /// For a transaction to take place, there must be customers
 /// to link to, hence the following hierarchy.
 ///
-#[derive(Debug, EnumIter, Copy, Clone, Display)]
+#[derive(Debug, EnumIter, Copy, Clone, Display, Serialize, Deserialize)]
 pub enum ParseType {
     Store = 0,
     Kiosk = 1,
