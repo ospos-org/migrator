@@ -1,11 +1,11 @@
 pub mod parser;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
 use std::{
     fs::{self, DirEntry},
     io,
     path::Path,
 };
-use std::fs::{File, OpenOptions};
-use std::io::Write;
 
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
 pub use parser::*;
@@ -111,28 +111,28 @@ pub fn convert_from_directory(input: String) -> String {
             let to_write_path = path.join("output.os");
 
             match File::create(to_write_path.clone()) {
-                Ok(mut f) => {
-                    match f.write_all(string_value.as_bytes()) {
-                        Ok(_) =>{
-                            if let Err(err) = f.flush() {
-                                println!("Encountered error flushing file, {}", err);
-                            } else {
-                                println!(
+                Ok(mut f) => match f.write_all(string_value.as_bytes()) {
+                    Ok(_) => {
+                        if let Err(err) = f.flush() {
+                            println!("Encountered error flushing file, {}", err);
+                        } else {
+                            println!(
                                     "Wrote some bytes to {} and Converted all data. Thank you for using OpenPOS!",
                                     to_write_path.to_str().unwrap(),
                                 )
-                            }
-                        },
-                        Err(error) => println!(
-                            "Failed to write data to file. Path given was: {} {:?}",
-                            to_write_path.to_str().unwrap_or_default(), error
-                        )
+                        }
                     }
-                }
+                    Err(error) => println!(
+                        "Failed to write data to file. Path given was: {} {:?}",
+                        to_write_path.to_str().unwrap_or_default(),
+                        error
+                    ),
+                },
                 Err(error) => {
                     println!(
                         "Failed to create data file. Path given was: {} {:?}",
-                        to_write_path.to_str().unwrap_or_default(), error
+                        to_write_path.to_str().unwrap_or_default(),
+                        error
                     )
                 }
             };
@@ -198,7 +198,7 @@ pub fn traverse_directories(
             if path.is_dir() {
                 traverse_directories(&path, cb)?;
             } else {
-                classifications.push(cb(&entry))
+                classifications.push(cb(&entry));
             }
         }
     }

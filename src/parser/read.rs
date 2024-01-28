@@ -141,5 +141,8 @@ pub fn read_file(
                 }
             }
         }
+        ParseType::Invalid => {
+            println!("[log]: Did nothing, hit invalid file type.")
+        }
     }
 }

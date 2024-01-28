@@ -17,6 +17,7 @@ pub fn match_self(parse_type: ParseType) -> String {
         ParseType::Product => "ZZZZ",
         ParseType::Customer => "ZZZZ",
         ParseType::Transaction => "ZZZZ",
+        ParseType::Invalid => "ZZZZZ",
     };
 
     String::from_str(matchable).unwrap()

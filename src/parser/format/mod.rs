@@ -23,6 +23,7 @@ pub enum ParseType {
     Product = 2,
     Customer = 3,
     Transaction = 4,
+    Invalid = 5,
 }
 
 pub trait Parsable<R> {

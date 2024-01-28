@@ -1,3 +1,4 @@
+use crate::parser::ParseType;
 use crate::InlineDatabase;
 use crate::{
     parser::format, parser::lightrail::CustomerRecord as lCR,
@@ -7,9 +8,6 @@ use crate::{
     parser::shopify::ProductRecord as sPR, parser::shopify::StoreRecord as sSR,
     parser::shopify::TransactionRecord as sTR,
 };
-
-use crate::parser::ParseType;
-
 use core::fmt;
 use csv::Reader;
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
@@ -18,11 +16,10 @@ use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::{
     fs::{DirEntry, File},
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Lines},
     usize::MAX,
 };
 use strsim::levenshtein;
-
 use strum::IntoEnumIterator;
 
 #[derive(Debug)]
@@ -94,10 +91,25 @@ impl Display for Classification {
 pub fn classify_type(entry: &DirEntry) -> Classification {
     let path: std::path::PathBuf = entry.path();
 
+    let ospos_file = entry.file_name().into_string().unwrap().ends_with(".os");
+
+    if ospos_file {
+        return Classification {
+            score: 0,
+            path: path.clone(),
+            branding: "ospos".to_string(),
+            variant: ParseType::Invalid,
+        };
+    }
+
     let open_file = File::open(path.clone()).unwrap();
     let reader = BufReader::new(open_file);
-    let mut lines = reader.lines();
+    let lines = reader.lines();
 
+    classify_from_value(path, lines)
+}
+
+pub fn classify_from_value(path: PathBuf, mut lines: Lines<BufReader<File>>) -> Classification {
     let mut best_match = Classification {
         score: MAX,
         path: path.clone(),
