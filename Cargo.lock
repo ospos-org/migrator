@@ -2219,7 +2219,7 @@ dependencies = [
 
 [[package]]
 name = "odm-migration-utility"
-version = "0.0.16"
+version = "0.0.17"
 dependencies = [
  "chrono",
  "clap",
@@ -2228,6 +2228,7 @@ dependencies = [
  "js-sys",
  "open-stock",
  "phf",
+ "schemars",
  "serde",
  "serde_json",
  "strsim 0.8.0",
