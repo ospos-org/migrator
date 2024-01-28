@@ -1,6 +1,7 @@
 pub mod parser;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
+use std::path::PathBuf;
 use std::{
     fs::{self, DirEntry},
     io,
@@ -187,7 +188,7 @@ pub fn leek_directory(dir: String) -> String {
 
 pub fn traverse_directories(
     dir: &Path,
-    cb: &dyn Fn(&DirEntry) -> Classification,
+    cb: &dyn Fn(&PathBuf) -> Classification,
 ) -> Result<Vec<Classification>, io::Error> {
     let mut classifications = vec![];
 
@@ -198,7 +199,7 @@ pub fn traverse_directories(
             if path.is_dir() {
                 traverse_directories(&path, cb)?;
             } else {
-                classifications.push(cb(&entry));
+                classifications.push(cb(&entry.path()));
             }
         }
     }

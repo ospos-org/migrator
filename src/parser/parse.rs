@@ -88,10 +88,15 @@ impl Display for Classification {
     }
 }
 
-pub fn classify_type(entry: &DirEntry) -> Classification {
-    let path: std::path::PathBuf = entry.path();
-
-    let ospos_file = entry.file_name().into_string().unwrap().ends_with(".os");
+pub fn classify_type(entry: &PathBuf) -> Classification {
+    let path: std::path::PathBuf = entry.clone();
+    let ospos_file = path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string()
+        .ends_with(".os");
 
     if ospos_file {
         return Classification {
