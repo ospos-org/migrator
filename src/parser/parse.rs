@@ -1,5 +1,5 @@
 use crate::parser::ParseType;
-use crate::InlineDatabase;
+use crate::{InlineDatabase};
 use crate::{
     parser::format, parser::lightrail::CustomerRecord as lCR,
     parser::lightrail::KioskRecord as lKR, parser::lightrail::ProductRecord as lPR,
@@ -15,12 +15,9 @@ use phf::{phf_map, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use std::path::Path;
 use std::path::PathBuf;
-use std::{
-    fs::{DirEntry, File},
-    io::{BufRead, BufReader, Lines},
-    usize::MAX,
-};
+use std::{fs::{DirEntry, File}, fs, io::{BufRead, BufReader, Lines}, io, usize::MAX};
 use strsim::levenshtein;
 use strum::IntoEnumIterator;
 
@@ -116,6 +113,15 @@ pub fn classify_type(entry: &PathBuf) -> Classification {
     classify_from_value(path, lines)
 }
 
+pub fn classify_by_path(path: &Path) -> Result<Vec<Classification>, std::io::Error> {
+    println!("Traversing {}", path.to_str().unwrap_or_default());
+
+    traverse_directories(path, &classify_type).map(|mut v| {
+        v.sort_by(|a, b| (a.variant as u32).cmp(&(b.variant as u32)));
+        v
+    })
+}
+
 pub fn classify_from_value(path: PathBuf, mut lines: Lines<BufReader<File>>) -> Classification {
     let mut best_match = Classification {
         score: MAX,
@@ -143,4 +149,25 @@ pub fn classify_from_value(path: PathBuf, mut lines: Lines<BufReader<File>>) -> 
     }
 
     best_match
+}
+
+pub fn traverse_directories(
+    dir: &Path,
+    cb: &dyn Fn(&PathBuf) -> Classification,
+) -> Result<Vec<Classification>, std::io::Error> {
+    let mut classifications = vec![];
+
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                traverse_directories(&path, cb)?;
+            } else {
+                classifications.push(cb(&entry.path()));
+            }
+        }
+    }
+
+    Ok(classifications)
 }

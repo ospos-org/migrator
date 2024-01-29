@@ -1,15 +1,15 @@
 pub mod parser;
-use std::fs::{File, OpenOptions};
+pub use parser::*;
+
 use std::io::Write;
-use std::path::PathBuf;
 use std::{
-    fs::{self, DirEntry},
+    fs::{self},
     io,
     path::Path,
 };
-
+use std::fs::File;
 use open_stock::{Customer, Kiosk, Product, Store, Transaction};
-pub use parser::*;
+
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -75,20 +75,9 @@ pub fn convert_from_directory(input: String) {
 #[cfg(not(feature = "wasm"))]
 pub fn convert_from_directory(input: String) -> String {
     let path = Path::new(&input);
-    println!("Traversing {}", path.clone().to_str().unwrap_or_default());
 
-    let classifications = match traverse_directories(path, &classify_type) {
-        Ok(mut v) => {
-            v.sort_by(|a, b| (a.variant as u32).cmp(&(b.variant as u32)));
-            v
-        }
-        Err(err) => {
-            panic!(
-                "[err]: Execution error in parsing files in provided directory, {}",
-                err
-            );
-        }
-    };
+    let classifications = classify_by_path(path)
+        .expect("[err]: Execution error in parsing files in provided directory");
 
     println!("Yielded Following Classifications: {:?}", classifications);
 
@@ -184,25 +173,4 @@ pub fn leek_directory(dir: String) -> String {
         .into_iter()
         .map(|classification| classification.to_string())
         .collect()
-}
-
-pub fn traverse_directories(
-    dir: &Path,
-    cb: &dyn Fn(&PathBuf) -> Classification,
-) -> Result<Vec<Classification>, io::Error> {
-    let mut classifications = vec![];
-
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                traverse_directories(&path, cb)?;
-            } else {
-                classifications.push(cb(&entry.path()));
-            }
-        }
-    }
-
-    Ok(classifications)
 }
