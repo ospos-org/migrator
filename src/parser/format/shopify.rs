@@ -671,7 +671,7 @@ impl Parsable<TransactionRecord> for Transaction {
                     kiosk: db.4.get(0).map_or("".to_owned(), |kiosk| kiosk.id.clone()),
                     transaction_type: open_stock::TransactionType::Out,
                     products: vec![],
-                    order_total: cloned.total.clone().parse::<f32>().unwrap_or(0.0),
+                    order_total: cloned.total.clone().parse::<i64>().unwrap_or(0),
                     payment: vec![Payment {
                         id: uuid::Uuid::new_v4().to_string(),
                         payment_method: PaymentMethod::Other(cloned.payment_method.clone()),
